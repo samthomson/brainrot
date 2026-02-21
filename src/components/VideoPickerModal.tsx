@@ -8,9 +8,8 @@ import {
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Search, Play, Pause, Check, Loader2 } from 'lucide-react';
+import { Search, Play, Pause, Check, Loader2, X } from 'lucide-react';
 import { useShortFormVideos } from '@/hooks/useShortFormVideos';
 import { formatDistanceToNow } from 'date-fns';
 import type { Video } from '@/types/video';
@@ -94,97 +93,153 @@ export function VideoPickerModal({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-5xl h-[80vh] flex flex-col">
-        <DialogHeader>
-          <DialogTitle>Pick a Video from Nostr</DialogTitle>
-          <p className="text-sm text-muted-foreground">
-            {videos.length} videos found
-          </p>
+      <DialogContent className="max-w-7xl h-[90vh] p-0 gap-0">
+        <DialogHeader className="px-6 pt-6 pb-4 border-b">
+          <div className="flex items-start justify-between">
+            <div>
+              <DialogTitle className="text-2xl">Browse Nostr Videos</DialogTitle>
+              <p className="text-sm text-muted-foreground mt-1">
+                {videos.length} videos available
+              </p>
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onClose}
+              className="rounded-full"
+            >
+              <X className="h-5 w-5" />
+            </Button>
+          </div>
+          <div className="relative mt-4">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search videos on Nostr..."
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              className="pl-10 h-12"
+            />
+            {isLoading && (
+              <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
+            )}
+          </div>
         </DialogHeader>
 
-        <div className="flex-1 grid grid-cols-2 gap-4 overflow-hidden">
-          {/* Left: Video List */}
-          <div className="flex flex-col gap-3">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search videos on Nostr..."
-                value={searchInput}
-                onChange={(e) => setSearchInput(e.target.value)}
-                className="pl-10"
-              />
-              {isLoading && (
-                <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
-              )}
+        <div className="flex-1 overflow-hidden">
+          {previewVideo ? (
+            // Preview Mode
+            <div className="h-full flex flex-col">
+              <div className="flex-1 bg-black relative">
+                <video
+                  ref={videoRef}
+                  src={previewVideo.url}
+                  className="w-full h-full object-contain"
+                  onEnded={() => setIsPlaying(false)}
+                  playsInline
+                  crossOrigin="anonymous"
+                />
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <Button
+                    onClick={togglePlayPause}
+                    size="lg"
+                    className="rounded-full h-16 w-16"
+                    variant="secondary"
+                  >
+                    {isPlaying ? (
+                      <Pause className="h-8 w-8" />
+                    ) : (
+                      <Play className="h-8 w-8" />
+                    )}
+                  </Button>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setPreviewVideo(null)}
+                  className="absolute top-4 left-4 bg-black/50 hover:bg-black/70 text-white"
+                >
+                  <X className="h-4 w-4 mr-2" />
+                  Back to Grid
+                </Button>
+              </div>
+              <div className="bg-background p-6 border-t">
+                <div className="max-w-4xl mx-auto flex items-start justify-between gap-6">
+                  <div className="flex-1">
+                    <h3 className="text-xl font-semibold mb-2">{previewVideo.name}</h3>
+                    <div className="space-y-1 text-sm text-muted-foreground">
+                      {previewVideo.duration > 0 && (
+                        <p>Duration: {previewVideo.duration.toFixed(1)}s</p>
+                      )}
+                      <p>Published: {formatDate(previewVideo.publishedAt)}</p>
+                      <p className="font-mono text-xs">
+                        Author: {previewVideo.pubkey.slice(0, 16)}...
+                      </p>
+                    </div>
+                  </div>
+                  <Button onClick={handleSelect} size="lg" className="flex-shrink-0">
+                    <Check className="h-4 w-4 mr-2" />
+                    Add to Timeline
+                  </Button>
+                </div>
+              </div>
             </div>
-
-            <ScrollArea className="flex-1">
+          ) : (
+            // Grid Mode
+            <div className="h-full overflow-y-auto px-6 py-4">
               {isLoading && !videos.length ? (
-                <div className="space-y-2">
-                  {Array.from({ length: 8 }).map((_, i) => (
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                  {Array.from({ length: 20 }).map((_, i) => (
                     <Card key={i}>
-                      <CardContent className="p-3">
-                        <div className="flex gap-3">
-                          <Skeleton className="h-20 w-20 rounded" />
-                          <div className="flex-1 space-y-2">
-                            <Skeleton className="h-4 w-full" />
-                            <Skeleton className="h-3 w-20" />
-                            <Skeleton className="h-3 w-32" />
-                          </div>
+                      <CardContent className="p-0">
+                        <Skeleton className="aspect-[9/16] w-full rounded-t" />
+                        <div className="p-3 space-y-2">
+                          <Skeleton className="h-4 w-full" />
+                          <Skeleton className="h-3 w-20" />
                         </div>
                       </CardContent>
                     </Card>
                   ))}
                 </div>
               ) : videos.length === 0 ? (
-                <div className="text-center text-muted-foreground py-8">
-                  {searchQuery ? 'No videos found' : 'No videos available'}
+                <div className="flex items-center justify-center h-full text-muted-foreground">
+                  {searchQuery ? 'No videos found for your search' : 'No videos available'}
                 </div>
               ) : (
-                <div className="space-y-2 pr-4">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 pb-4">
                   {videos.map((video) => (
                     <Card
                       key={video.id}
-                      className={`cursor-pointer transition-all ${
-                        previewVideo?.id === video.id
-                          ? 'border-primary bg-primary/5 ring-2 ring-primary'
-                          : 'hover:bg-accent'
-                      }`}
+                      className="cursor-pointer transition-all hover:scale-105 hover:shadow-lg group"
                       onClick={() => handlePreview(video)}
                     >
-                      <CardContent className="p-3 flex gap-3">
-                        <div className="relative flex-shrink-0">
+                      <CardContent className="p-0">
+                        <div className="relative aspect-[9/16] bg-muted overflow-hidden rounded-t">
                           {video.thumbnailUrl ? (
                             <img
                               src={video.thumbnailUrl}
                               alt={video.name}
-                              className="h-20 w-20 object-cover rounded"
+                              className="w-full h-full object-cover"
                             />
                           ) : (
-                            <div className="h-20 w-20 bg-muted rounded flex items-center justify-center">
-                              <Play className="h-6 w-6 text-muted-foreground" />
+                            <div className="w-full h-full flex items-center justify-center">
+                              <Play className="h-12 w-12 text-muted-foreground" />
                             </div>
                           )}
-                          {previewVideo?.id === video.id && (
-                            <div className="absolute -top-1 -right-1 bg-primary rounded-full p-1">
-                              <Check className="h-3 w-3 text-primary-foreground" />
+                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center">
+                            <Play className="h-12 w-12 text-white opacity-0 group-hover:opacity-100 transition-opacity drop-shadow-lg" />
+                          </div>
+                          {video.duration > 0 && (
+                            <div className="absolute bottom-2 right-2 bg-black/80 text-white text-xs px-2 py-1 rounded">
+                              {video.duration.toFixed(0)}s
                             </div>
                           )}
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-medium truncate text-sm">
+                        <div className="p-3">
+                          <p className="font-medium text-sm truncate mb-1">
                             {video.name}
                           </p>
-                          {video.duration > 0 && (
-                            <p className="text-xs text-muted-foreground">
-                              {video.duration.toFixed(1)}s
-                            </p>
-                          )}
                           <p className="text-xs text-muted-foreground truncate">
                             {formatDate(video.publishedAt)}
-                          </p>
-                          <p className="text-xs text-muted-foreground truncate">
-                            {video.pubkey.slice(0, 8)}...
                           </p>
                         </div>
                       </CardContent>
@@ -192,64 +247,8 @@ export function VideoPickerModal({
                   ))}
                 </div>
               )}
-            </ScrollArea>
-          </div>
-
-          {/* Right: Preview */}
-          <div className="flex flex-col gap-3">
-            {previewVideo ? (
-              <>
-                <div className="aspect-video bg-black rounded-lg overflow-hidden relative flex-shrink-0">
-                  <video
-                    ref={videoRef}
-                    src={previewVideo.url}
-                    className="w-full h-full"
-                    onEnded={() => setIsPlaying(false)}
-                    playsInline
-                    crossOrigin="anonymous"
-                  />
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <Button
-                      onClick={togglePlayPause}
-                      size="lg"
-                      className="rounded-full"
-                      variant="secondary"
-                    >
-                      {isPlaying ? (
-                        <Pause className="h-6 w-6" />
-                      ) : (
-                        <Play className="h-6 w-6" />
-                      )}
-                    </Button>
-                  </div>
-                </div>
-
-                <div className="flex-1 overflow-hidden">
-                  <h3 className="font-semibold mb-2">{previewVideo.name}</h3>
-                  {previewVideo.duration > 0 && (
-                    <p className="text-sm text-muted-foreground mb-1">
-                      Duration: {previewVideo.duration.toFixed(1)}s
-                    </p>
-                  )}
-                  <p className="text-sm text-muted-foreground mb-1">
-                    Published: {formatDate(previewVideo.publishedAt)}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    Author: {previewVideo.pubkey.slice(0, 16)}...
-                  </p>
-                </div>
-
-                <Button onClick={handleSelect} size="lg" className="w-full">
-                  <Check className="h-4 w-4 mr-2" />
-                  Add to Timeline
-                </Button>
-              </>
-            ) : (
-              <div className="flex items-center justify-center h-full text-muted-foreground">
-                Click a video to preview
-              </div>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       </DialogContent>
     </Dialog>
