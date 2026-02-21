@@ -40,6 +40,7 @@ function parseVideoEvent(event: NostrEvent): Video | null {
       duration,
       thumbnailUrl,
       pubkey: event.pubkey,
+      publishedAt: event.created_at,
     };
   } catch (error) {
     console.error('Error parsing video event:', error);
@@ -47,19 +48,30 @@ function parseVideoEvent(event: NostrEvent): Video | null {
   }
 }
 
-export function useShortFormVideos() {
+export function useShortFormVideos(searchTerm?: string) {
   const { nostr } = useNostr();
 
   return useQuery({
-    queryKey: ['short-form-videos'],
+    queryKey: ['short-form-videos', searchTerm],
     queryFn: async () => {
       // Query for short-form video events (kind 22 and 34236)
-      const events = await nostr.query([
+      const filters: Array<{
+        kinds: number[];
+        limit: number;
+        search?: string;
+      }> = [
         {
           kinds: [22, 34236],
-          limit: 50,
+          limit: 500,
         },
-      ]);
+      ];
+
+      // Add search term if provided
+      if (searchTerm && searchTerm.trim()) {
+        filters[0].search = searchTerm.trim();
+      }
+
+      const events = await nostr.query(filters);
 
       const videos: Video[] = [];
       
@@ -69,6 +81,9 @@ export function useShortFormVideos() {
           videos.push(video);
         }
       }
+
+      // Sort by most recent first
+      videos.sort((a, b) => b.publishedAt - a.publishedAt);
 
       return videos;
     },

@@ -3,7 +3,6 @@ import { useSeoMeta } from '@unhead/react';
 import { TimelineEditor } from '@/components/TimelineEditor';
 import { JSONViewer } from '@/components/JSONViewer';
 import { VideoPickerModal } from '@/components/VideoPickerModal';
-import { useShortFormVideos } from '@/hooks/useShortFormVideos';
 import type { Video, SourceVideo, TimelineSegment, RemixData } from '@/types/video';
 
 const Index = () => {
@@ -12,7 +11,6 @@ const Index = () => {
     description: 'Create new videos by combining segments from existing short-form Nostr videos.',
   });
 
-  const { data: nostrVideos = [], isLoading } = useShortFormVideos();
   const [sourceVideos, setSourceVideos] = useState<SourceVideo[]>([]);
   const [timelineSegments, setTimelineSegments] = useState<TimelineSegment[]>([]);
   const [isPickerOpen, setIsPickerOpen] = useState(false);
@@ -116,8 +114,6 @@ const Index = () => {
       <VideoPickerModal
         open={isPickerOpen}
         onClose={() => setIsPickerOpen(false)}
-        videos={nostrVideos}
-        isLoading={isLoading}
         onSelectVideo={handleSelectVideo}
       />
     </div>

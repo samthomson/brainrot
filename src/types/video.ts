@@ -8,6 +8,7 @@ export interface Video {
   duration: number;
   thumbnailUrl?: string;
   pubkey: string;
+  publishedAt: number;
 }
 
 export interface SourceVideo extends Video {

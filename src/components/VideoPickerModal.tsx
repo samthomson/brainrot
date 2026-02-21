@@ -10,40 +10,56 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Search, Play, Pause, Check } from 'lucide-react';
+import { Search, Play, Pause, Check, Loader2 } from 'lucide-react';
+import { useShortFormVideos } from '@/hooks/useShortFormVideos';
+import { formatDistanceToNow } from 'date-fns';
 import type { Video } from '@/types/video';
 
 interface VideoPickerModalProps {
   open: boolean;
   onClose: () => void;
-  videos: Video[];
-  isLoading: boolean;
   onSelectVideo: (video: Video) => void;
 }
 
 export function VideoPickerModal({
   open,
   onClose,
-  videos,
-  isLoading,
   onSelectVideo,
 }: VideoPickerModalProps) {
-  const [search, setSearch] = useState('');
+  const [searchInput, setSearchInput] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
   const [previewVideo, setPreviewVideo] = useState<Video | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const searchTimeoutRef = useRef<NodeJS.Timeout>();
 
-  const filteredVideos = videos.filter((video) =>
-    video.name.toLowerCase().includes(search.toLowerCase())
-  );
+  const { data: videos = [], isLoading } = useShortFormVideos(searchQuery);
 
   useEffect(() => {
     if (!open) {
       setPreviewVideo(null);
       setIsPlaying(false);
-      setSearch('');
+      setSearchInput('');
+      setSearchQuery('');
     }
   }, [open]);
+
+  // Debounce search
+  useEffect(() => {
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+
+    searchTimeoutRef.current = setTimeout(() => {
+      setSearchQuery(searchInput);
+    }, 500);
+
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, [searchInput]);
 
   const handlePreview = (video: Video) => {
     setPreviewVideo(video);
@@ -68,11 +84,22 @@ export function VideoPickerModal({
     }
   };
 
+  const formatDate = (timestamp: number) => {
+    try {
+      return formatDistanceToNow(new Date(timestamp * 1000), { addSuffix: true });
+    } catch {
+      return 'Unknown date';
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-5xl h-[80vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>Pick a Video from Nostr</DialogTitle>
+          <p className="text-sm text-muted-foreground">
+            {videos.length} videos found
+          </p>
         </DialogHeader>
 
         <div className="flex-1 grid grid-cols-2 gap-4 overflow-hidden">
@@ -81,15 +108,18 @@ export function VideoPickerModal({
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Search videos..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search videos on Nostr..."
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
                 className="pl-10"
               />
+              {isLoading && (
+                <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
+              )}
             </div>
 
             <ScrollArea className="flex-1">
-              {isLoading ? (
+              {isLoading && !videos.length ? (
                 <div className="space-y-2">
                   {Array.from({ length: 8 }).map((_, i) => (
                     <Card key={i}>
@@ -99,19 +129,20 @@ export function VideoPickerModal({
                           <div className="flex-1 space-y-2">
                             <Skeleton className="h-4 w-full" />
                             <Skeleton className="h-3 w-20" />
+                            <Skeleton className="h-3 w-32" />
                           </div>
                         </div>
                       </CardContent>
                     </Card>
                   ))}
                 </div>
-              ) : filteredVideos.length === 0 ? (
+              ) : videos.length === 0 ? (
                 <div className="text-center text-muted-foreground py-8">
-                  {search ? 'No videos found' : 'No videos available'}
+                  {searchQuery ? 'No videos found' : 'No videos available'}
                 </div>
               ) : (
                 <div className="space-y-2 pr-4">
-                  {filteredVideos.map((video) => (
+                  {videos.map((video) => (
                     <Card
                       key={video.id}
                       className={`cursor-pointer transition-all ${
@@ -122,7 +153,7 @@ export function VideoPickerModal({
                       onClick={() => handlePreview(video)}
                     >
                       <CardContent className="p-3 flex gap-3">
-                        <div className="relative">
+                        <div className="relative flex-shrink-0">
                           {video.thumbnailUrl ? (
                             <img
                               src={video.thumbnailUrl}
@@ -149,6 +180,9 @@ export function VideoPickerModal({
                               {video.duration.toFixed(1)}s
                             </p>
                           )}
+                          <p className="text-xs text-muted-foreground truncate">
+                            {formatDate(video.publishedAt)}
+                          </p>
                           <p className="text-xs text-muted-foreground truncate">
                             {video.pubkey.slice(0, 8)}...
                           </p>
@@ -193,10 +227,13 @@ export function VideoPickerModal({
                 <div className="flex-1 overflow-hidden">
                   <h3 className="font-semibold mb-2">{previewVideo.name}</h3>
                   {previewVideo.duration > 0 && (
-                    <p className="text-sm text-muted-foreground mb-2">
+                    <p className="text-sm text-muted-foreground mb-1">
                       Duration: {previewVideo.duration.toFixed(1)}s
                     </p>
                   )}
+                  <p className="text-sm text-muted-foreground mb-1">
+                    Published: {formatDate(previewVideo.publishedAt)}
+                  </p>
                   <p className="text-xs text-muted-foreground">
                     Author: {previewVideo.pubkey.slice(0, 16)}...
                   </p>
