@@ -1,3 +1,4 @@
+import { useState, useRef, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Play } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
@@ -11,6 +12,49 @@ interface VideoCardProps {
 
 export function VideoCard({ video, onClick }: VideoCardProps) {
   const { displayName } = useVideoAuthor(video);
+  const [generatedThumbnail, setGeneratedThumbnail] = useState<string | null>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    // If no thumbnail URL, try to generate one from the video
+    if (!video.thumbnailUrl && videoRef.current) {
+      const videoEl = videoRef.current;
+      
+      const generateThumbnail = () => {
+        try {
+          // Seek to 1 second or 10% of duration, whichever is less
+          const seekTime = Math.min(1, (videoEl.duration || 10) * 0.1);
+          videoEl.currentTime = seekTime;
+        } catch (error) {
+          console.error('Error seeking video for thumbnail:', error);
+        }
+      };
+
+      const captureThumbnail = () => {
+        try {
+          const canvas = document.createElement('canvas');
+          canvas.width = videoEl.videoWidth;
+          canvas.height = videoEl.videoHeight;
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
+            const thumbnail = canvas.toDataURL('image/jpeg', 0.7);
+            setGeneratedThumbnail(thumbnail);
+          }
+        } catch (error) {
+          console.error('Error generating thumbnail:', error);
+        }
+      };
+
+      videoEl.addEventListener('loadedmetadata', generateThumbnail);
+      videoEl.addEventListener('seeked', captureThumbnail);
+
+      return () => {
+        videoEl.removeEventListener('loadedmetadata', generateThumbnail);
+        videoEl.removeEventListener('seeked', captureThumbnail);
+      };
+    }
+  }, [video.thumbnailUrl]);
 
   const formatDate = (timestamp: number) => {
     try {
@@ -20,6 +64,8 @@ export function VideoCard({ video, onClick }: VideoCardProps) {
     }
   };
 
+  const thumbnailSrc = video.thumbnailUrl || generatedThumbnail;
+
   return (
     <Card
       className="cursor-pointer transition-all hover:scale-105 hover:shadow-lg group"
@@ -27,9 +73,9 @@ export function VideoCard({ video, onClick }: VideoCardProps) {
     >
       <CardContent className="p-0">
         <div className="relative aspect-[9/16] bg-muted overflow-hidden rounded-t">
-          {video.thumbnailUrl ? (
+          {thumbnailSrc ? (
             <img
-              src={video.thumbnailUrl}
+              src={thumbnailSrc}
               alt={video.name}
               className="w-full h-full object-cover"
               loading="lazy"
@@ -39,6 +85,19 @@ export function VideoCard({ video, onClick }: VideoCardProps) {
               <Play className="h-12 w-12 text-muted-foreground" />
             </div>
           )}
+          
+          {/* Hidden video element for thumbnail generation */}
+          {!video.thumbnailUrl && !generatedThumbnail && (
+            <video
+              ref={videoRef}
+              src={video.url}
+              className="hidden"
+              preload="metadata"
+              crossOrigin="anonymous"
+              muted
+            />
+          )}
+
           <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center">
             <Play className="h-12 w-12 text-white opacity-0 group-hover:opacity-100 transition-opacity drop-shadow-lg" />
           </div>

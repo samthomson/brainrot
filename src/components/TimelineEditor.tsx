@@ -30,6 +30,7 @@ export function TimelineEditor({
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const [videoDuration, setVideoDuration] = useState(0);
 
   // Auto-select first source video when added
   useEffect(() => {
@@ -41,11 +42,18 @@ export function TimelineEditor({
   useEffect(() => {
     if (selectedSource && videoRef.current) {
       videoRef.current.load();
-      setRange([0, Math.min(5, selectedSource.duration || 5)]);
       setIsPlaying(false);
       setCurrentTime(0);
     }
   }, [selectedSource]);
+
+  const handleLoadedMetadata = () => {
+    if (videoRef.current) {
+      const duration = videoRef.current.duration;
+      setVideoDuration(duration);
+      setRange([0, Math.min(5, duration)]);
+    }
+  };
 
   const handleTimeUpdate = () => {
     if (videoRef.current) {
@@ -106,7 +114,7 @@ export function TimelineEditor({
   };
 
   const totalDuration = timelineSegments.reduce((sum, seg) => sum + seg.duration, 0);
-  const maxDuration = selectedSource?.duration || 100;
+  const maxDuration = videoDuration || selectedSource?.duration || 100;
 
   // Show empty state when no source videos
   if (sourceVideos.length === 0) {
@@ -143,59 +151,65 @@ export function TimelineEditor({
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex gap-2 flex-wrap">
-            {sourceVideos.map((video) => (
-              <Card
-                key={video.id}
-                className={`cursor-pointer transition-all ${
-                  selectedSource?.id === video.id
-                    ? 'border-primary bg-primary/5 ring-2 ring-primary'
-                    : 'hover:bg-accent'
-                }`}
-                onClick={() => setSelectedSource(video)}
-              >
-                <CardContent className="p-3 flex items-center gap-3">
-                  {video.thumbnailUrl ? (
-                    <img
-                      src={video.thumbnailUrl}
-                      alt={video.name}
-                      className="h-16 w-16 object-cover rounded"
-                    />
-                  ) : (
-                    <div className="h-16 w-16 bg-muted rounded" />
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium truncate text-sm">{video.name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {video.duration.toFixed(1)}s
-                    </p>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onRemoveSourceVideo(video.id);
-                      if (selectedSource?.id === video.id) {
-                        setSelectedSource(sourceVideos[0] === video ? null : sourceVideos[0]);
-                      }
-                    }}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+          <ScrollArea className="max-h-32">
+            <div className="flex gap-2 flex-wrap pr-4">
+              {sourceVideos.map((video) => (
+                <Card
+                  key={video.id}
+                  className={`cursor-pointer transition-all ${
+                    selectedSource?.id === video.id
+                      ? 'border-primary bg-primary/5 ring-2 ring-primary'
+                      : 'hover:bg-accent'
+                  }`}
+                  onClick={() => setSelectedSource(video)}
+                >
+                  <CardContent className="p-3 flex items-center gap-3">
+                    <div className="h-16 w-16 bg-muted rounded overflow-hidden flex-shrink-0">
+                      {video.thumbnailUrl ? (
+                        <img
+                          src={video.thumbnailUrl}
+                          alt={video.name}
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <div className="h-full w-full flex items-center justify-center">
+                          <Play className="h-6 w-6 text-muted-foreground" />
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium truncate text-sm">{video.name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {video.duration > 0 ? `${video.duration.toFixed(1)}s` : 'Loading...'}
+                      </p>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onRemoveSourceVideo(video.id);
+                        if (selectedSource?.id === video.id) {
+                          setSelectedSource(sourceVideos[0] === video ? null : sourceVideos[0]);
+                        }
+                      }}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </ScrollArea>
         </CardContent>
       </Card>
 
       {/* Segment Creator */}
       <Card className="overflow-hidden">
-        <CardHeader>
+        <CardHeader className="pb-3">
           <CardTitle className="text-base">
             {selectedSource ? (
-              <>Create Segment from: {selectedSource.name}</>
+              <>✂️ Create Segment from: {selectedSource.name}</>
             ) : (
               <>Select a Source Video</>
             )}
@@ -208,7 +222,8 @@ export function TimelineEditor({
                 <video
                   ref={videoRef}
                   src={selectedSource.url}
-                  className="w-full h-full"
+                  className="w-full h-full object-contain"
+                  onLoadedMetadata={handleLoadedMetadata}
                   onTimeUpdate={handleTimeUpdate}
                   onEnded={() => setIsPlaying(false)}
                   playsInline
@@ -230,30 +245,38 @@ export function TimelineEditor({
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
+              <div className="bg-muted/50 p-4 rounded-lg space-y-3">
+                <div className="flex justify-between text-sm font-medium">
                   <span>Current: {currentTime.toFixed(2)}s</span>
                   <span>Duration: {maxDuration.toFixed(2)}s</span>
                 </div>
-                <div className="text-sm font-medium">
-                  Selected: {range[0].toFixed(2)}s - {range[1].toFixed(2)}s
-                  <span className="text-muted-foreground ml-2">
-                    ({(range[1] - range[0]).toFixed(2)}s)
-                  </span>
+                
+                <div className="space-y-2">
+                  <div className="text-sm font-semibold text-center">
+                    Drag the slider to select your segment range:
+                  </div>
+                  <Slider
+                    min={0}
+                    max={maxDuration}
+                    step={0.1}
+                    value={range}
+                    onValueChange={(value) => setRange(value as [number, number])}
+                    className="w-full py-4"
+                  />
+                  <div className="text-center">
+                    <span className="text-lg font-bold text-primary">
+                      {range[0].toFixed(2)}s - {range[1].toFixed(2)}s
+                    </span>
+                    <span className="text-sm text-muted-foreground ml-2">
+                      ({(range[1] - range[0]).toFixed(2)}s segment)
+                    </span>
+                  </div>
                 </div>
-                <Slider
-                  min={0}
-                  max={maxDuration}
-                  step={0.1}
-                  value={range}
-                  onValueChange={(value) => setRange(value as [number, number])}
-                  className="w-full"
-                />
               </div>
 
               <Button onClick={handleAddSegment} className="w-full" size="lg">
                 <Scissors className="h-4 w-4 mr-2" />
-                Cut Segment & Add to Timeline
+                Cut This Segment & Add to Timeline
               </Button>
             </>
           ) : (
@@ -268,7 +291,7 @@ export function TimelineEditor({
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center justify-between text-base">
-            <span>Timeline</span>
+            <span>📽️ Timeline</span>
             {timelineSegments.length > 0 && (
               <span className="text-sm text-muted-foreground font-normal">
                 Total: {totalDuration.toFixed(2)}s ({timelineSegments.length}{' '}
@@ -281,7 +304,7 @@ export function TimelineEditor({
           <ScrollArea className="h-48">
             {timelineSegments.length === 0 ? (
               <div className="text-center text-muted-foreground py-12">
-                <p className="mb-2">📽️ Your timeline is empty</p>
+                <p className="mb-2">Your timeline is empty</p>
                 <p className="text-sm">
                   Cut segments from source videos above to build your remix
                 </p>
