@@ -60,7 +60,12 @@ export function TimelineEditor({
       const time = videoRef.current.currentTime;
       setCurrentTime(time);
 
-      if (time >= range[1]) {
+      // Loop within selected range
+      if (isPlaying && time >= range[1]) {
+        videoRef.current.currentTime = range[0];
+      }
+      // Keep video within range even when scrubbing
+      if (time < range[0] || time > range[1]) {
         videoRef.current.currentTime = range[0];
       }
     }
@@ -71,12 +76,23 @@ export function TimelineEditor({
       if (isPlaying) {
         videoRef.current.pause();
       } else {
+        // Always start playing from the beginning of the range
         videoRef.current.currentTime = range[0];
         videoRef.current.play();
       }
       setIsPlaying(!isPlaying);
     }
   };
+
+  // When range changes, update video position if needed
+  useEffect(() => {
+    if (videoRef.current && !isPlaying) {
+      // If current time is outside the new range, reset to start
+      if (currentTime < range[0] || currentTime > range[1]) {
+        videoRef.current.currentTime = range[0];
+      }
+    }
+  }, [range, currentTime, isPlaying]);
 
   const handleAddSegment = () => {
     if (!selectedSource) return;
