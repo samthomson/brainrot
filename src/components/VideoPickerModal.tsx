@@ -11,6 +11,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Search, Play, Pause, Check, Loader2, ArrowLeft } from 'lucide-react';
 import { useShortFormVideos } from '@/hooks/useShortFormVideos';
+import { useVideoAuthor } from '@/hooks/useVideoAuthor';
+import { VideoCard } from '@/components/VideoCard';
 import { formatDistanceToNow } from 'date-fns';
 import type { Video } from '@/types/video';
 
@@ -129,75 +131,15 @@ export function VideoPickerModal({
 
         <div className="flex-1 overflow-hidden">
           {previewVideo ? (
-            // Preview Mode
-            <div className="h-full flex flex-col bg-black">
-              {/* Top Bar */}
-              <div className="bg-black/90 backdrop-blur p-4 border-b border-white/10 flex items-center justify-between">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleBackToGrid}
-                  className="text-white hover:bg-white/10"
-                >
-                  <ArrowLeft className="h-4 w-4 mr-2" />
-                  Back to Grid
-                </Button>
-                <Button
-                  onClick={handleSelect}
-                  size="lg"
-                  className="bg-primary hover:bg-primary/90"
-                >
-                  <Check className="h-4 w-4 mr-2" />
-                  Add to Timeline
-                </Button>
-              </div>
-
-              {/* Video Container */}
-              <div className="flex-1 flex items-center justify-center p-8 min-h-0">
-                <div className="relative max-w-2xl max-h-full">
-                  <video
-                    ref={videoRef}
-                    src={previewVideo.url}
-                    className="max-w-full max-h-[calc(90vh-200px)] rounded-lg"
-                    onEnded={() => setIsPlaying(false)}
-                    playsInline
-                    crossOrigin="anonymous"
-                  />
-                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                    <Button
-                      onClick={togglePlayPause}
-                      size="lg"
-                      className="rounded-full h-16 w-16 pointer-events-auto"
-                      variant="secondary"
-                    >
-                      {isPlaying ? (
-                        <Pause className="h-8 w-8" />
-                      ) : (
-                        <Play className="h-8 w-8" />
-                      )}
-                    </Button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Bottom Info Bar */}
-              <div className="bg-black/90 backdrop-blur p-6 border-t border-white/10">
-                <div className="max-w-4xl mx-auto">
-                  <h3 className="text-xl font-semibold mb-2 text-white">
-                    {previewVideo.name}
-                  </h3>
-                  <div className="space-y-1 text-sm text-white/70">
-                    {previewVideo.duration > 0 && (
-                      <p>Duration: {previewVideo.duration.toFixed(1)}s</p>
-                    )}
-                    <p>Published: {formatDate(previewVideo.publishedAt)}</p>
-                    <p className="font-mono text-xs">
-                      Author: {previewVideo.pubkey.slice(0, 16)}...
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
+            <PreviewMode
+              video={previewVideo}
+              isPlaying={isPlaying}
+              videoRef={videoRef}
+              onBackToGrid={handleBackToGrid}
+              onTogglePlayPause={togglePlayPause}
+              onSelect={handleSelect}
+              formatDate={formatDate}
+            />
           ) : (
             // Grid Mode
             <div className="h-full overflow-y-auto px-6 py-4">
@@ -222,43 +164,11 @@ export function VideoPickerModal({
               ) : (
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 pb-4">
                   {videos.map((video) => (
-                    <Card
+                    <VideoCard
                       key={video.id}
-                      className="cursor-pointer transition-all hover:scale-105 hover:shadow-lg group"
+                      video={video}
                       onClick={() => handlePreview(video)}
-                    >
-                      <CardContent className="p-0">
-                        <div className="relative aspect-[9/16] bg-muted overflow-hidden rounded-t">
-                          {video.thumbnailUrl ? (
-                            <img
-                              src={video.thumbnailUrl}
-                              alt={video.name}
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center">
-                              <Play className="h-12 w-12 text-muted-foreground" />
-                            </div>
-                          )}
-                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center">
-                            <Play className="h-12 w-12 text-white opacity-0 group-hover:opacity-100 transition-opacity drop-shadow-lg" />
-                          </div>
-                          {video.duration > 0 && (
-                            <div className="absolute bottom-2 right-2 bg-black/80 text-white text-xs px-2 py-1 rounded">
-                              {video.duration.toFixed(0)}s
-                            </div>
-                          )}
-                        </div>
-                        <div className="p-3">
-                          <p className="font-medium text-sm truncate mb-1">
-                            {video.name}
-                          </p>
-                          <p className="text-xs text-muted-foreground truncate">
-                            {formatDate(video.publishedAt)}
-                          </p>
-                        </div>
-                      </CardContent>
-                    </Card>
+                    />
                   ))}
                 </div>
               )}
@@ -267,5 +177,94 @@ export function VideoPickerModal({
         </div>
       </DialogContent>
     </Dialog>
+  );
+}
+
+function PreviewMode({
+  video,
+  isPlaying,
+  videoRef,
+  onBackToGrid,
+  onTogglePlayPause,
+  onSelect,
+  formatDate,
+}: {
+  video: Video;
+  isPlaying: boolean;
+  videoRef: React.RefObject<HTMLVideoElement>;
+  onBackToGrid: () => void;
+  onTogglePlayPause: () => void;
+  onSelect: () => void;
+  formatDate: (timestamp: number) => string;
+}) {
+  const { displayName } = useVideoAuthor(video);
+
+  return (
+    <div className="h-full flex flex-col bg-black">
+      {/* Top Bar */}
+      <div className="bg-black/90 backdrop-blur p-4 border-b border-white/10 flex items-center justify-between">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onBackToGrid}
+          className="text-white hover:bg-white/10"
+        >
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Back to Grid
+        </Button>
+        <Button
+          onClick={onSelect}
+          size="lg"
+          className="bg-primary hover:bg-primary/90"
+        >
+          <Check className="h-4 w-4 mr-2" />
+          Add to Timeline
+        </Button>
+      </div>
+
+      {/* Video Container */}
+      <div className="flex-1 flex items-center justify-center p-8 min-h-0">
+        <div className="relative max-w-2xl max-h-full">
+          <video
+            ref={videoRef}
+            src={video.url}
+            className="max-w-full max-h-[calc(90vh-200px)] rounded-lg"
+            onEnded={() => onTogglePlayPause()}
+            playsInline
+            crossOrigin="anonymous"
+          />
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <Button
+              onClick={onTogglePlayPause}
+              size="lg"
+              className="rounded-full h-16 w-16 pointer-events-auto"
+              variant="secondary"
+            >
+              {isPlaying ? (
+                <Pause className="h-8 w-8" />
+              ) : (
+                <Play className="h-8 w-8" />
+              )}
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      {/* Bottom Info Bar */}
+      <div className="bg-black/90 backdrop-blur p-6 border-t border-white/10">
+        <div className="max-w-4xl mx-auto">
+          <h3 className="text-xl font-semibold mb-2 text-white">
+            {video.name}
+          </h3>
+          <div className="space-y-1 text-sm text-white/70">
+            {video.duration > 0 && (
+              <p>Duration: {video.duration.toFixed(1)}s</p>
+            )}
+            <p>Author: {displayName}</p>
+            <p>Published: {formatDate(video.publishedAt)}</p>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }

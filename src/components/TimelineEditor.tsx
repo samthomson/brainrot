@@ -2,9 +2,9 @@ import { useState, useRef, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
-import { Plus, Play, Pause, Trash2, GripVertical, Scissors } from 'lucide-react';
+import { Plus, Play, Pause, Trash2, GripVertical, Scissors, Video } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import type { SourceVideo, VideoSegment, TimelineSegment } from '@/types/video';
+import type { SourceVideo, TimelineSegment } from '@/types/video';
 
 interface TimelineEditorProps {
   sourceVideos: SourceVideo[];
@@ -30,6 +30,13 @@ export function TimelineEditor({
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const videoRef = useRef<HTMLVideoElement>(null);
+
+  // Auto-select first source video when added
+  useEffect(() => {
+    if (sourceVideos.length > 0 && !selectedSource) {
+      setSelectedSource(sourceVideos[0]);
+    }
+  }, [sourceVideos, selectedSource]);
 
   useEffect(() => {
     if (selectedSource && videoRef.current) {
@@ -101,12 +108,39 @@ export function TimelineEditor({
   const totalDuration = timelineSegments.reduce((sum, seg) => sum + seg.duration, 0);
   const maxDuration = selectedSource?.duration || 100;
 
+  // Show empty state when no source videos
+  if (sourceVideos.length === 0) {
+    return (
+      <div className="h-full flex items-center justify-center">
+        <Card className="max-w-md border-dashed">
+          <CardContent className="py-12 px-8 text-center">
+            <Video className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
+            <h3 className="text-lg font-semibold mb-2">No Source Videos</h3>
+            <p className="text-sm text-muted-foreground mb-6">
+              Click the <strong>+ button</strong> above to browse and add Nostr videos to your timeline
+            </p>
+            <Button onClick={onAddSourceVideo} size="lg">
+              <Plus className="h-5 w-5 mr-2" />
+              Add Your First Video
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="h-full grid grid-rows-[auto_1fr_auto] gap-4">
       {/* Source Videos */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Source Videos</CardTitle>
+          <CardTitle className="text-base flex items-center justify-between">
+            <span>Source Videos ({sourceVideos.length})</span>
+            <Button onClick={onAddSourceVideo} size="sm" variant="outline">
+              <Plus className="h-4 w-4 mr-1" />
+              Add More
+            </Button>
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex gap-2 flex-wrap">
@@ -142,6 +176,9 @@ export function TimelineEditor({
                     onClick={(e) => {
                       e.stopPropagation();
                       onRemoveSourceVideo(video.id);
+                      if (selectedSource?.id === video.id) {
+                        setSelectedSource(sourceVideos[0] === video ? null : sourceVideos[0]);
+                      }
                     }}
                   >
                     <Trash2 className="h-4 w-4" />
@@ -149,13 +186,6 @@ export function TimelineEditor({
                 </CardContent>
               </Card>
             ))}
-            <Button
-              variant="outline"
-              onClick={onAddSourceVideo}
-              className="h-24 w-32 border-dashed"
-            >
-              <Plus className="h-6 w-6" />
-            </Button>
           </div>
         </CardContent>
       </Card>
@@ -164,7 +194,11 @@ export function TimelineEditor({
       <Card className="overflow-hidden">
         <CardHeader>
           <CardTitle className="text-base">
-            {selectedSource ? 'Create Segment' : 'Select a Source Video'}
+            {selectedSource ? (
+              <>Create Segment from: {selectedSource.name}</>
+            ) : (
+              <>Select a Source Video</>
+            )}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -223,8 +257,8 @@ export function TimelineEditor({
               </Button>
             </>
           ) : (
-            <div className="aspect-video flex items-center justify-center text-muted-foreground">
-              Select a source video above to create segments
+            <div className="aspect-video flex items-center justify-center text-muted-foreground text-center p-8">
+              👆 Click a source video above to create segments from it
             </div>
           )}
         </CardContent>
@@ -247,7 +281,10 @@ export function TimelineEditor({
           <ScrollArea className="h-48">
             {timelineSegments.length === 0 ? (
               <div className="text-center text-muted-foreground py-12">
-                Cut segments from source videos to build your remix
+                <p className="mb-2">📽️ Your timeline is empty</p>
+                <p className="text-sm">
+                  Cut segments from source videos above to build your remix
+                </p>
               </div>
             ) : (
               <div className="space-y-2 pr-4">
