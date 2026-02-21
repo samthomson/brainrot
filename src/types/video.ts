@@ -1,15 +1,20 @@
+import type { NostrEvent } from '@nostrify/nostrify';
+
 export interface Video {
   id: string;
+  event: NostrEvent;
   name: string;
   url: string;
   duration: number;
-  file?: File;
+  thumbnailUrl?: string;
+  pubkey: string;
 }
 
 export interface VideoSegment {
   id: string;
   videoId: string;
   videoName: string;
+  videoEventId: string;
   startTime: number;
   endTime: number;
   duration: number;
@@ -21,7 +26,7 @@ export interface TimelineSegment extends VideoSegment {
 
 export interface RemixData {
   segments: Array<{
-    videoId: string;
+    videoEventId: string;
     videoName: string;
     startTime: number;
     endTime: number;

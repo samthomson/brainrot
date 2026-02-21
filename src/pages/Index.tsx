@@ -4,39 +4,26 @@ import { VideoLibrary } from '@/components/VideoLibrary';
 import { SegmentSelector } from '@/components/SegmentSelector';
 import { Timeline } from '@/components/Timeline';
 import { JSONViewer } from '@/components/JSONViewer';
+import { useShortFormVideos } from '@/hooks/useShortFormVideos';
 import type { Video, VideoSegment, TimelineSegment, RemixData } from '@/types/video';
 
 const Index = () => {
   useSeoMeta({
-    title: 'Video Remix - Mix and Match Video Segments',
-    description: 'Create new videos by combining segments from existing short-form videos.',
+    title: 'Video Remix - Mix and Match Nostr Video Segments',
+    description: 'Create new videos by combining segments from existing short-form Nostr videos.',
   });
 
-  const [videos, setVideos] = useState<Video[]>([]);
+  const { data: nostrVideos = [], isLoading } = useShortFormVideos();
   const [selectedVideo, setSelectedVideo] = useState<Video | null>(null);
   const [timelineSegments, setTimelineSegments] = useState<TimelineSegment[]>([]);
-
-  const handleAddVideo = (video: Video) => {
-    setVideos((prev) => [...prev, video]);
-  };
-
-  const handleRemoveVideo = (id: string) => {
-    setVideos((prev) => prev.filter((v) => v.id !== id));
-    if (selectedVideo?.id === id) {
-      setSelectedVideo(null);
-    }
-    // Remove timeline segments from this video
-    setTimelineSegments((prev) => prev.filter((s) => s.videoId !== id));
-  };
+  const [videoDurations, setVideoDurations] = useState<Record<string, number>>({});
 
   const handleSelectVideo = (video: Video) => {
     setSelectedVideo(video);
   };
 
   const handleVideoDurationLoaded = (videoId: string, duration: number) => {
-    setVideos((prev) =>
-      prev.map((v) => (v.id === videoId ? { ...v, duration } : v))
-    );
+    setVideoDurations((prev) => ({ ...prev, [videoId]: duration }));
     if (selectedVideo?.id === videoId) {
       setSelectedVideo((prev) => (prev ? { ...prev, duration } : null));
     }
@@ -67,7 +54,7 @@ const Index = () => {
 
   const remixData: RemixData = {
     segments: timelineSegments.map((seg) => ({
-      videoId: seg.videoId,
+      videoEventId: seg.videoEventId,
       videoName: seg.videoName,
       startTime: seg.startTime,
       endTime: seg.endTime,
@@ -85,7 +72,7 @@ const Index = () => {
             Video Remix Studio
           </h1>
           <p className="text-lg text-muted-foreground">
-            Mix and match video segments to create something new ✨
+            Mix and match Nostr short-form video segments ✨
           </p>
         </div>
 
@@ -94,11 +81,10 @@ const Index = () => {
           {/* Left Column - Video Library */}
           <div className="col-span-12 lg:col-span-3 h-full">
             <VideoLibrary
-              videos={videos}
-              onAddVideo={handleAddVideo}
-              onRemoveVideo={handleRemoveVideo}
+              videos={nostrVideos}
               onSelectVideo={handleSelectVideo}
               selectedVideoId={selectedVideo?.id}
+              isLoading={isLoading}
             />
           </div>
 

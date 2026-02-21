@@ -69,6 +69,7 @@ export function SegmentSelector({
       id: crypto.randomUUID(),
       videoId: video.id,
       videoName: video.name,
+      videoEventId: video.event.id,
       startTime: range[0],
       endTime: range[1],
       duration: range[1] - range[0],
@@ -81,7 +82,7 @@ export function SegmentSelector({
     return (
       <Card className="h-full">
         <CardContent className="flex items-center justify-center h-full text-muted-foreground">
-          Select a video to create segments
+          Select a video from the library to create segments
         </CardContent>
       </Card>
     );
@@ -93,7 +94,7 @@ export function SegmentSelector({
     <Card className="h-full flex flex-col">
       <CardHeader>
         <CardTitle className="text-base">Segment Selector</CardTitle>
-        <p className="text-sm text-muted-foreground">{video.name}</p>
+        <p className="text-sm text-muted-foreground truncate">{video.name}</p>
       </CardHeader>
       <CardContent className="flex-1 flex flex-col gap-4">
         <div className="aspect-video bg-black rounded-lg overflow-hidden relative">
@@ -104,6 +105,8 @@ export function SegmentSelector({
             onLoadedMetadata={handleLoadedMetadata}
             onTimeUpdate={handleTimeUpdate}
             onEnded={() => setIsPlaying(false)}
+            playsInline
+            crossOrigin="anonymous"
           />
           <div className="absolute bottom-4 left-1/2 -translate-x-1/2">
             <Button

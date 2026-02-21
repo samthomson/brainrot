@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Copy, FileJson, Check } from 'lucide-react';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { useState } from 'react';
 import type { RemixData } from '@/types/video';
 
@@ -37,12 +38,12 @@ export function JSONViewer({ data }: JSONViewerProps) {
           </Button>
         </div>
       </CardHeader>
-      <CardContent className="flex-1 overflow-hidden">
-        <div className="h-full overflow-y-auto">
-          <pre className="text-xs bg-muted p-4 rounded-lg overflow-x-auto">
+      <CardContent className="flex-1 overflow-hidden px-3">
+        <ScrollArea className="h-full pr-3">
+          <pre className="text-xs bg-muted p-4 rounded-lg">
             <code>{jsonString}</code>
           </pre>
-        </div>
+        </ScrollArea>
       </CardContent>
     </Card>
   );
