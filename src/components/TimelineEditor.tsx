@@ -138,7 +138,8 @@ export function TimelineEditor({
   }
 
   return (
-    <div className="h-full grid grid-rows-[auto_1fr_auto] gap-4">
+    <div className="h-full overflow-y-auto">
+      <div className="space-y-4 pb-4">
       {/* Source Videos */}
       <Card>
         <CardHeader>
@@ -205,7 +206,7 @@ export function TimelineEditor({
       </Card>
 
       {/* Segment Creator */}
-      <Card className="overflow-hidden">
+      <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-base">
             {selectedSource ? (
@@ -215,7 +216,7 @@ export function TimelineEditor({
             )}
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-4 overflow-visible">
           {selectedSource ? (
             <>
               <div className="aspect-video bg-black rounded-lg overflow-hidden relative">
@@ -353,6 +354,7 @@ export function TimelineEditor({
           </ScrollArea>
         </CardContent>
       </Card>
+      </div>
     </div>
   );
 }
