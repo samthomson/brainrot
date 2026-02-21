@@ -1,11 +1,10 @@
 import { useState } from 'react';
 import { useSeoMeta } from '@unhead/react';
-import { VideoLibrary } from '@/components/VideoLibrary';
-import { SegmentSelector } from '@/components/SegmentSelector';
-import { Timeline } from '@/components/Timeline';
+import { TimelineEditor } from '@/components/TimelineEditor';
 import { JSONViewer } from '@/components/JSONViewer';
+import { VideoPickerModal } from '@/components/VideoPickerModal';
 import { useShortFormVideos } from '@/hooks/useShortFormVideos';
-import type { Video, VideoSegment, TimelineSegment, RemixData } from '@/types/video';
+import type { Video, SourceVideo, TimelineSegment, RemixData } from '@/types/video';
 
 const Index = () => {
   useSeoMeta({
@@ -14,27 +13,30 @@ const Index = () => {
   });
 
   const { data: nostrVideos = [], isLoading } = useShortFormVideos();
-  const [selectedVideo, setSelectedVideo] = useState<Video | null>(null);
+  const [sourceVideos, setSourceVideos] = useState<SourceVideo[]>([]);
   const [timelineSegments, setTimelineSegments] = useState<TimelineSegment[]>([]);
-  const [videoDurations, setVideoDurations] = useState<Record<string, number>>({});
+  const [isPickerOpen, setIsPickerOpen] = useState(false);
+
+  const handleAddSourceVideo = () => {
+    setIsPickerOpen(true);
+  };
 
   const handleSelectVideo = (video: Video) => {
-    setSelectedVideo(video);
-  };
-
-  const handleVideoDurationLoaded = (videoId: string, duration: number) => {
-    setVideoDurations((prev) => ({ ...prev, [videoId]: duration }));
-    if (selectedVideo?.id === videoId) {
-      setSelectedVideo((prev) => (prev ? { ...prev, duration } : null));
-    }
-  };
-
-  const handleAddSegment = (segment: VideoSegment) => {
-    const timelineSegment: TimelineSegment = {
-      ...segment,
-      order: timelineSegments.length,
+    const sourceVideo: SourceVideo = {
+      ...video,
+      segments: [],
     };
-    setTimelineSegments((prev) => [...prev, timelineSegment]);
+    setSourceVideos((prev) => [...prev, sourceVideo]);
+  };
+
+  const handleRemoveSourceVideo = (id: string) => {
+    setSourceVideos((prev) => prev.filter((v) => v.id !== id));
+    // Remove all segments from this video
+    setTimelineSegments((prev) => prev.filter((s) => s.sourceVideoId !== id));
+  };
+
+  const handleAddSegment = (segment: TimelineSegment) => {
+    setTimelineSegments((prev) => [...prev, segment]);
   };
 
   const handleReorderSegments = (fromIndex: number, toIndex: number) => {
@@ -72,42 +74,27 @@ const Index = () => {
             Video Remix Studio
           </h1>
           <p className="text-lg text-muted-foreground">
-            Mix and match Nostr short-form video segments ✨
+            Cut and combine Nostr short-form videos into something new ✨
           </p>
         </div>
 
         {/* Main Layout */}
-        <div className="grid grid-cols-12 gap-4 h-[calc(100vh-200px)]">
-          {/* Left Column - Video Library */}
-          <div className="col-span-12 lg:col-span-3 h-full">
-            <VideoLibrary
-              videos={nostrVideos}
-              onSelectVideo={handleSelectVideo}
-              selectedVideoId={selectedVideo?.id}
-              isLoading={isLoading}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 h-[calc(100vh-200px)]">
+          {/* Timeline Editor - Takes 2 columns */}
+          <div className="lg:col-span-2 h-full overflow-hidden">
+            <TimelineEditor
+              sourceVideos={sourceVideos}
+              onAddSourceVideo={handleAddSourceVideo}
+              onRemoveSourceVideo={handleRemoveSourceVideo}
+              timelineSegments={timelineSegments}
+              onAddSegment={handleAddSegment}
+              onRemoveSegment={handleRemoveSegment}
+              onReorderSegments={handleReorderSegments}
             />
           </div>
 
-          {/* Middle Column - Segment Selector & Timeline */}
-          <div className="col-span-12 lg:col-span-6 h-full flex flex-col gap-4">
-            <div className="flex-1">
-              <SegmentSelector
-                video={selectedVideo}
-                onAddSegment={handleAddSegment}
-                onVideoDurationLoaded={handleVideoDurationLoaded}
-              />
-            </div>
-            <div className="flex-1">
-              <Timeline
-                segments={timelineSegments}
-                onReorder={handleReorderSegments}
-                onRemove={handleRemoveSegment}
-              />
-            </div>
-          </div>
-
-          {/* Right Column - JSON Viewer */}
-          <div className="col-span-12 lg:col-span-3 h-full">
+          {/* JSON Viewer */}
+          <div className="h-full">
             <JSONViewer data={remixData} />
           </div>
         </div>
@@ -124,6 +111,15 @@ const Index = () => {
           </a>
         </div>
       </div>
+
+      {/* Video Picker Modal */}
+      <VideoPickerModal
+        open={isPickerOpen}
+        onClose={() => setIsPickerOpen(false)}
+        videos={nostrVideos}
+        isLoading={isLoading}
+        onSelectVideo={handleSelectVideo}
+      />
     </div>
   );
 };

@@ -10,11 +10,13 @@ export interface Video {
   pubkey: string;
 }
 
+export interface SourceVideo extends Video {
+  segments: VideoSegment[];
+}
+
 export interface VideoSegment {
   id: string;
-  videoId: string;
-  videoName: string;
-  videoEventId: string;
+  sourceVideoId: string;
   startTime: number;
   endTime: number;
   duration: number;
@@ -22,6 +24,8 @@ export interface VideoSegment {
 
 export interface TimelineSegment extends VideoSegment {
   order: number;
+  videoName: string;
+  videoEventId: string;
 }
 
 export interface RemixData {
