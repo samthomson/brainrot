@@ -5,6 +5,7 @@ import { TimelineTrack } from '@/components/TimelineTrack';
 import { JSONViewer } from '@/components/JSONViewer';
 import { RemixPreview } from '@/components/RemixPreview';
 import { VideoPickerModal } from '@/components/VideoPickerModal';
+import { ClearAllDialog } from '@/components/ClearAllDialog';
 import { usePersistedState } from '@/hooks/usePersistedState';
 import { Button } from '@/components/ui/button';
 import { Trash2 } from 'lucide-react';
@@ -27,6 +28,7 @@ const Index = () => {
   const [sourceSegments, setSourceSegments] = usePersistedState<SourceSegment[]>('video-remix-source-segments', []);
   const [timelineSegments, setTimelineSegments] = usePersistedState<TimelineSegment[]>('video-remix-timeline', []);
   const [isPickerOpen, setIsPickerOpen] = useState(false);
+  const [isClearDialogOpen, setIsClearDialogOpen] = useState(false);
 
   // Derive sourceVideos for preview component
   const sourceVideos = sourceSegments.map(s => s.video);
@@ -97,14 +99,13 @@ const Index = () => {
   };
 
   const handleClearAll = () => {
-    if (confirm('Are you sure you want to clear all videos and timeline? This cannot be undone.')) {
-      setSourceSegments([]);
-      setTimelineSegments([]);
-      toast({
-        title: 'Cleared',
-        description: 'All videos and timeline cleared',
-      });
-    }
+    setSourceSegments([]);
+    setTimelineSegments([]);
+    setIsClearDialogOpen(false);
+    toast({
+      title: 'Cleared',
+      description: 'All videos and timeline cleared',
+    });
   };
 
   const handleRemoveSegment = (segmentId: string) => {
@@ -204,7 +205,7 @@ const Index = () => {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={handleClearAll}
+                  onClick={() => setIsClearDialogOpen(true)}
                   className="text-destructive hover:text-destructive"
                 >
                   <Trash2 className="h-4 w-4 mr-2" />
@@ -265,6 +266,13 @@ const Index = () => {
         open={isPickerOpen}
         onClose={() => setIsPickerOpen(false)}
         onSelectVideo={handleSelectVideo}
+      />
+
+      {/* Clear All Confirmation Dialog */}
+      <ClearAllDialog
+        open={isClearDialogOpen}
+        onOpenChange={setIsClearDialogOpen}
+        onConfirm={handleClearAll}
       />
     </div>
   );
