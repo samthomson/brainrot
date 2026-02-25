@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useSeoMeta } from '@unhead/react';
 import { TimelineEditor } from '@/components/TimelineEditor';
 import { JSONViewer } from '@/components/JSONViewer';
+import { RemixPreview } from '@/components/RemixPreview';
 import { VideoPickerModal } from '@/components/VideoPickerModal';
 import { usePersistedState } from '@/hooks/usePersistedState';
 import { Button } from '@/components/ui/button';
@@ -129,9 +130,9 @@ const Index = () => {
         </div>
 
         {/* Main Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 h-[calc(100vh-200px)]">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {/* Timeline Editor - Takes 2 columns */}
-          <div className="lg:col-span-2 h-full overflow-hidden">
+          <div className="lg:col-span-2">
             <TimelineEditor
               sourceVideos={sourceVideos}
               onAddSourceVideo={handleAddSourceVideo}
@@ -143,8 +144,12 @@ const Index = () => {
             />
           </div>
 
-          {/* JSON Viewer */}
-          <div className="h-full">
+          {/* Right Column - Preview & JSON */}
+          <div className="space-y-4">
+            <RemixPreview
+              segments={timelineSegments}
+              sourceVideos={sourceVideos}
+            />
             <JSONViewer data={remixData} />
           </div>
         </div>
