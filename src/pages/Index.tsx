@@ -20,6 +20,13 @@ const Index = () => {
   };
 
   const handleSelectVideo = (video: Video) => {
+    // Check if video already added
+    const exists = sourceVideos.some((v) => v.id === video.id);
+    if (exists) {
+      console.log('Video already added to sources');
+      return;
+    }
+    
     const sourceVideo: SourceVideo = {
       ...video,
       segments: [],

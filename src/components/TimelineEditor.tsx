@@ -168,8 +168,8 @@ export function TimelineEditor({
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <ScrollArea className="max-h-32">
-            <div className="flex gap-2 flex-wrap pr-4">
+          <div className="max-h-40 overflow-y-auto">
+            <div className="flex gap-2 flex-wrap pb-2">
               {sourceVideos.map((video) => (
                 <Card
                   key={video.id}
@@ -217,7 +217,7 @@ export function TimelineEditor({
                 </Card>
               ))}
             </div>
-          </ScrollArea>
+          </div>
         </CardContent>
       </Card>
 
