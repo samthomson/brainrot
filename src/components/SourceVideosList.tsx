@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Plus, Video } from 'lucide-react';
@@ -26,6 +27,8 @@ export function SourceVideosList({
   onSegmentChange,
   onReorder,
 }: SourceVideosListProps) {
+  const [playingSegmentId, setPlayingSegmentId] = useState<string | null>(null);
+
   const handleDragStart = (e: React.DragEvent, index: number) => {
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('text/plain', index.toString());
@@ -41,6 +44,14 @@ export function SourceVideosList({
     const fromIndex = parseInt(e.dataTransfer.getData('text/plain'));
     if (fromIndex !== toIndex) {
       onReorder(fromIndex, toIndex);
+    }
+  };
+
+  const handlePlayingChange = (segmentId: string, playing: boolean) => {
+    if (playing) {
+      setPlayingSegmentId(segmentId);
+    } else if (playingSegmentId === segmentId) {
+      setPlayingSegmentId(null);
     }
   };
 
@@ -65,7 +76,7 @@ export function SourceVideosList({
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold">Source Videos ({sourceSegments.length})</h2>
+        <h2 className="text-xl font-bold">Source Videos ({sourceSegments.length})</h2>
         <Button onClick={onAddSourceVideo} size="sm" variant="outline">
           <Plus className="h-4 w-4 mr-2" />
           Add More
@@ -88,6 +99,8 @@ export function SourceVideosList({
               onRemove={onRemoveSegment}
               onDuplicate={onDuplicateVideo}
               onSegmentChange={onSegmentChange}
+              onPlayingChange={handlePlayingChange}
+              shouldPause={playingSegmentId !== null && playingSegmentId !== segment.id}
             />
           </div>
         ))}

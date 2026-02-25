@@ -12,9 +12,20 @@ interface SourceVideoItemProps {
   onRemove: (segmentId: string) => void;
   onDuplicate: (video: SourceVideo) => void;
   onSegmentChange: (segmentId: string, segment: Omit<TimelineSegment, 'id' | 'order'>) => void;
+  onPlayingChange?: (segmentId: string, playing: boolean) => void;
+  shouldPause?: boolean;
 }
 
-export function SourceVideoItem({ video, segmentId, index, onRemove, onDuplicate, onSegmentChange }: SourceVideoItemProps) {
+export function SourceVideoItem({ 
+  video, 
+  segmentId, 
+  index, 
+  onRemove, 
+  onDuplicate, 
+  onSegmentChange,
+  onPlayingChange,
+  shouldPause,
+}: SourceVideoItemProps) {
   const [range, setRange] = useState<[number, number]>([0, 5]);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
@@ -48,13 +59,24 @@ export function SourceVideoItem({ video, segmentId, index, onRemove, onDuplicate
     if (videoRef.current) {
       if (isPlaying) {
         videoRef.current.pause();
+        setIsPlaying(false);
+        if (onPlayingChange) onPlayingChange(segmentId, false);
       } else {
         videoRef.current.currentTime = range[0];
         videoRef.current.play();
+        setIsPlaying(true);
+        if (onPlayingChange) onPlayingChange(segmentId, true);
       }
-      setIsPlaying(!isPlaying);
     }
-  }, [isPlaying, range]);
+  }, [isPlaying, range, segmentId, onPlayingChange]);
+
+  // Auto-pause when another video starts playing
+  useEffect(() => {
+    if (shouldPause && isPlaying && videoRef.current) {
+      videoRef.current.pause();
+      setIsPlaying(false);
+    }
+  }, [shouldPause, isPlaying]);
 
   useEffect(() => {
     if (videoRef.current && !isPlaying) {
@@ -79,7 +101,7 @@ export function SourceVideoItem({ video, segmentId, index, onRemove, onDuplicate
         endTime: range[1],
         duration: range[1] - range[0],
       });
-    }, 100); // Debounce 100ms to avoid rapid updates while dragging
+    }, 100);
 
     return () => {
       if (updateTimeoutRef.current) {
@@ -93,36 +115,15 @@ export function SourceVideoItem({ video, segmentId, index, onRemove, onDuplicate
   return (
     <Card className="group">
       <CardContent className="p-4">
-        <div className="flex gap-4 items-start">
+        <div className="flex gap-4 items-center">
           {/* Drag Handle */}
-          <div className="flex items-center pt-2 cursor-move">
+          <div className="cursor-move">
             <GripVertical className="h-5 w-5 text-muted-foreground" />
           </div>
 
-          {/* Left: Thumbnail */}
-          <div className="flex-shrink-0">
-            <div className="relative w-24 h-24 bg-black rounded-lg overflow-hidden">
-              {video.thumbnailUrl ? (
-                <img
-                  src={video.thumbnailUrl}
-                  alt={video.name}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <div className="w-full h-full bg-muted flex items-center justify-center">
-                  <Play className="h-6 w-6 text-muted-foreground" />
-                </div>
-              )}
-            </div>
-            <div className="mt-2 text-sm font-medium truncate max-w-24">
-              {video.name}
-            </div>
-          </div>
-
-          {/* Right: Segment Creator */}
-          <div className="flex-1 space-y-3">
-            {/* Video Player - Smaller */}
-            <div className="relative bg-black rounded-lg overflow-hidden" style={{ height: '200px' }}>
+          {/* Video Player */}
+          <div className="w-64 flex-shrink-0">
+            <div className="relative bg-black rounded-lg overflow-hidden aspect-video">
               <video
                 ref={videoRef}
                 src={video.url}
@@ -133,6 +134,7 @@ export function SourceVideoItem({ video, segmentId, index, onRemove, onDuplicate
                 playsInline
                 crossOrigin="anonymous"
                 preload="metadata"
+                poster={video.thumbnailUrl}
               />
               <div className="absolute bottom-2 left-1/2 -translate-x-1/2">
                 <Button
@@ -149,31 +151,34 @@ export function SourceVideoItem({ video, segmentId, index, onRemove, onDuplicate
                 </Button>
               </div>
             </div>
+            <div className="mt-1 text-xs font-medium truncate text-center">
+              {video.name}
+            </div>
+          </div>
 
-            {/* Segment Controls - Compact */}
-            <div className="space-y-2">
-              <div className="flex justify-between text-xs text-muted-foreground">
-                <span>Current: {currentTime.toFixed(2)}s</span>
-                <span>Duration: {maxDuration.toFixed(2)}s</span>
-              </div>
+          {/* Segment Controls */}
+          <div className="flex-1 space-y-3">
+            <div className="flex justify-between text-xs text-muted-foreground">
+              <span>Current: {currentTime.toFixed(2)}s</span>
+              <span>Duration: {maxDuration.toFixed(2)}s</span>
+            </div>
 
-              <Slider
-                min={0}
-                max={maxDuration}
-                step={0.1}
-                value={range}
-                onValueChange={(value) => setRange(value as [number, number])}
-                className="w-full"
-              />
-              
-              <div className="text-center">
-                <span className="text-lg font-bold text-primary">
-                  {range[0].toFixed(2)}s - {range[1].toFixed(2)}s
-                </span>
-                <span className="text-xs text-muted-foreground ml-2">
-                  ({(range[1] - range[0]).toFixed(2)}s)
-                </span>
-              </div>
+            <Slider
+              min={0}
+              max={maxDuration}
+              step={0.1}
+              value={range}
+              onValueChange={(value) => setRange(value as [number, number])}
+              className="w-full"
+            />
+            
+            <div className="text-center">
+              <span className="text-xl font-bold text-primary">
+                {range[0].toFixed(2)}s - {range[1].toFixed(2)}s
+              </span>
+              <span className="text-xs text-muted-foreground ml-2">
+                ({(range[1] - range[0]).toFixed(2)}s)
+              </span>
             </div>
           </div>
 

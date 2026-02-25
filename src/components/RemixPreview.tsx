@@ -17,6 +17,14 @@ export function RemixPreview({ segments, sourceVideos }: RemixPreviewProps) {
   const [totalProgress, setTotalProgress] = useState(0);
   const videoRef = useRef<HTMLVideoElement>(null);
 
+  // Reset to first segment when segments change
+  useEffect(() => {
+    setCurrentSegmentIndex(0);
+    setSegmentProgress(0);
+    setTotalProgress(0);
+    setIsPlaying(false);
+  }, [segments.length]);
+
   const totalDuration = segments.reduce((sum, seg) => sum + seg.duration, 0);
   const currentSegment = segments[currentSegmentIndex];
   const sourceVideo = currentSegment
@@ -127,9 +135,9 @@ export function RemixPreview({ segments, sourceVideos }: RemixPreviewProps) {
   }
 
   return (
-    <Card className="h-full flex flex-col">
+    <Card>
       <CardHeader className="pb-3">
-        <CardTitle className="flex items-center gap-2">
+        <CardTitle className="flex items-center gap-2 text-base">
           <Eye className="h-5 w-5" />
           Preview
         </CardTitle>
@@ -137,7 +145,7 @@ export function RemixPreview({ segments, sourceVideos }: RemixPreviewProps) {
           Segment {currentSegmentIndex + 1} of {segments.length}
         </p>
       </CardHeader>
-      <CardContent className="flex-1 flex flex-col gap-4">
+      <CardContent className="space-y-3">
         {/* Video Player */}
         <div className="aspect-video bg-black rounded-lg overflow-hidden relative">
           {sourceVideo && currentSegment ? (
