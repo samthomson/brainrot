@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Plus, Video } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { SourceVideoItem } from '@/components/SourceVideoItem';
 import type { SourceVideo, TimelineSegment } from '@/types/video';
 
@@ -57,31 +57,25 @@ export function SourceVideosList({
 
   if (sourceSegments.length === 0) {
     return (
-      <Card className="border-dashed">
-        <CardContent className="py-12 px-8 text-center">
-          <Video className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
-          <h3 className="text-lg font-semibold mb-2">No Source Videos</h3>
-          <p className="text-sm text-muted-foreground mb-6">
-            Add videos from Nostr to start creating your remix
-          </p>
-          <Button onClick={onAddSourceVideo} size="lg">
-            <Plus className="h-5 w-5 mr-2" />
-            Add Your First Video
-          </Button>
-        </CardContent>
-      </Card>
+      <div>
+        <h2 className="text-xl font-bold mb-4">Source Videos (0)</h2>
+        <Card className="border-dashed">
+          <CardContent className="py-16 text-center">
+            <Button onClick={onAddSourceVideo} size="lg" className="h-24 w-24 rounded-full">
+              <Plus className="h-12 w-12" />
+            </Button>
+            <p className="text-sm text-muted-foreground mt-4">
+              Add your first video
+            </p>
+          </CardContent>
+        </Card>
+      </div>
     );
   }
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h2 className="text-xl font-bold">Source Videos ({sourceSegments.length})</h2>
-        <Button onClick={onAddSourceVideo} size="sm" variant="outline">
-          <Plus className="h-4 w-4 mr-2" />
-          Add More
-        </Button>
-      </div>
+      <h2 className="text-xl font-bold">Source Videos ({sourceSegments.length})</h2>
 
       <div className="space-y-3">
         {sourceSegments.map((segment, index) => (
@@ -104,6 +98,15 @@ export function SourceVideosList({
             />
           </div>
         ))}
+
+        {/* Big + Button at End */}
+        <Card className="border-dashed">
+          <CardContent className="py-8 flex items-center justify-center">
+            <Button onClick={onAddSourceVideo} size="lg" className="h-16 w-16 rounded-full">
+              <Plus className="h-8 w-8" />
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

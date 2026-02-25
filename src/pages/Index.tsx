@@ -9,7 +9,8 @@ import { ClearAllDialog } from '@/components/ClearAllDialog';
 import { BlocklistManager } from '@/components/BlocklistManager';
 import { usePersistedState } from '@/hooks/usePersistedState';
 import { Button } from '@/components/ui/button';
-import { Trash2 } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Trash2, Eye, FileJson } from 'lucide-react';
 import { useToast } from '@/hooks/useToast';
 import type { Video, SourceVideo, TimelineSegment, RemixData } from '@/types/video';
 
@@ -179,7 +180,6 @@ const Index = () => {
   };
 
   const handleRemoveTimelineSegment = (id: string) => {
-    // This is called from timeline track, just reorder
     const index = timelineSegments.findIndex(s => s.id === id);
     if (index === -1) return;
     
@@ -215,40 +215,41 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 dark:from-gray-950 dark:via-purple-950 dark:to-blue-950 p-4">
-      <div className="max-w-[1800px] mx-auto space-y-4">
-        {/* Header */}
-        <div className="text-center space-y-2 py-6">
-          <div className="flex items-center justify-between max-w-4xl mx-auto">
-            <div className="flex-1"></div>
-            <div className="flex-1">
-              <h1 className="text-5xl font-bold bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600 bg-clip-text text-transparent">
-                Video Remix Studio
-              </h1>
-              <p className="text-lg text-muted-foreground">
-                Cut and combine Nostr short-form videos into something new ✨
-              </p>
-            </div>
-            <div className="flex-1 flex justify-end">
-              {(sourceSegments.length > 0 || timelineSegments.length > 0) && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setIsClearDialogOpen(true)}
-                  className="text-destructive hover:text-destructive"
-                >
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  Clear All
-                </Button>
-              )}
-            </div>
+    <div className="min-h-screen bg-background p-6">
+      <div className="max-w-[1600px] mx-auto space-y-6">
+        {/* Simple Header */}
+        <div className="flex items-center justify-between pb-4 border-b">
+          <div>
+            <h1 className="text-3xl font-bold">Video Remix</h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              Cut and combine Nostr short-form videos
+            </p>
           </div>
+          {(sourceSegments.length > 0 || timelineSegments.length > 0) && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsClearDialogOpen(true)}
+              className="text-destructive hover:text-destructive"
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Clear All
+            </Button>
+          )}
         </div>
 
+        {/* Timeline - Full Width First */}
+        <TimelineTrack
+          segments={timelineSegments}
+          sourceVideos={sourceVideos}
+          onReorder={handleReorderTimeline}
+          onRemove={handleRemoveTimelineSegment}
+        />
+
         {/* Main Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left Column - Source Videos */}
-          <div className="lg:col-span-2 space-y-4">
+          <div className="lg:col-span-2">
             <SourceVideosList
               sourceSegments={sourceSegments}
               onAddSourceVideo={handleAddSourceVideo}
@@ -257,28 +258,36 @@ const Index = () => {
               onSegmentChange={handleSegmentChange}
               onReorder={handleReorderSourceSegments}
             />
-
-            {/* Timeline */}
-            <TimelineTrack
-              segments={timelineSegments}
-              sourceVideos={sourceVideos}
-              onReorder={handleReorderTimeline}
-              onRemove={handleRemoveTimelineSegment}
-            />
           </div>
 
-          {/* Right Column - Preview & JSON */}
-          <div className="space-y-4">
-            <RemixPreview
-              segments={timelineSegments}
-              sourceVideos={sourceVideos}
-            />
-            <JSONViewer data={remixData} />
+          {/* Right Column - Preview & JSON Tabs */}
+          <div>
+            <Tabs defaultValue="preview" className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="preview">
+                  <Eye className="h-4 w-4 mr-2" />
+                  Preview
+                </TabsTrigger>
+                <TabsTrigger value="json">
+                  <FileJson className="h-4 w-4 mr-2" />
+                  JSON
+                </TabsTrigger>
+              </TabsList>
+              <TabsContent value="preview" className="mt-4">
+                <RemixPreview
+                  segments={timelineSegments}
+                  sourceVideos={sourceVideos}
+                />
+              </TabsContent>
+              <TabsContent value="json" className="mt-4">
+                <JSONViewer data={remixData} />
+              </TabsContent>
+            </Tabs>
           </div>
         </div>
 
         {/* Footer */}
-        <div className="text-center text-sm text-muted-foreground py-4">
+        <div className="text-center text-sm text-muted-foreground py-4 border-t">
           <a
             href="https://shakespeare.diy"
             target="_blank"
