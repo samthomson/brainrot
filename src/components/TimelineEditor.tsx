@@ -2,8 +2,8 @@ import { useState, useRef, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
-import { Plus, Play, Pause, Trash2, GripVertical, Scissors, Video } from 'lucide-react';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { Plus, Play, Pause, Trash2, Scissors, Video } from 'lucide-react';
+import { TimelineTrack } from '@/components/TimelineTrack';
 import type { SourceVideo, TimelineSegment } from '@/types/video';
 
 interface TimelineEditorProps {
@@ -111,25 +111,6 @@ export function TimelineEditor({
     onAddSegment(segment);
   };
 
-  const handleDragStart = (e: React.DragEvent, index: number) => {
-    e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData('text/plain', index.toString());
-  };
-
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-  };
-
-  const handleDrop = (e: React.DragEvent, toIndex: number) => {
-    e.preventDefault();
-    const fromIndex = parseInt(e.dataTransfer.getData('text/plain'));
-    if (fromIndex !== toIndex) {
-      onReorderSegments(fromIndex, toIndex);
-    }
-  };
-
-  const totalDuration = timelineSegments.reduce((sum, seg) => sum + seg.duration, 0);
   const maxDuration = videoDuration || selectedSource?.duration || 100;
 
   // Show empty state when no source videos
@@ -305,71 +286,12 @@ export function TimelineEditor({
       </Card>
 
       {/* Timeline */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between text-base">
-            <span>📽️ Timeline</span>
-            {timelineSegments.length > 0 && (
-              <span className="text-sm text-muted-foreground font-normal">
-                Total: {totalDuration.toFixed(2)}s ({timelineSegments.length}{' '}
-                segment{timelineSegments.length !== 1 ? 's' : ''})
-              </span>
-            )}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ScrollArea className="h-48">
-            {timelineSegments.length === 0 ? (
-              <div className="text-center text-muted-foreground py-12">
-                <p className="mb-2">Your timeline is empty</p>
-                <p className="text-sm">
-                  Cut segments from source videos above to build your remix
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-2 pr-4">
-                {timelineSegments.map((segment, index) => (
-                  <div
-                    key={segment.id}
-                    draggable
-                    onDragStart={(e) => handleDragStart(e, index)}
-                    onDragOver={handleDragOver}
-                    onDrop={(e) => handleDrop(e, index)}
-                    className="group"
-                  >
-                    <Card className="cursor-move hover:border-primary transition-colors">
-                      <CardContent className="p-3 flex items-center gap-3">
-                        <div className="flex items-center gap-2 text-muted-foreground">
-                          <GripVertical className="h-4 w-4" />
-                          <span className="text-sm font-mono w-8">{index + 1}</span>
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-medium truncate text-sm">
-                            {segment.videoName}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {segment.startTime.toFixed(2)}s -{' '}
-                            {segment.endTime.toFixed(2)}s (
-                            {segment.duration.toFixed(2)}s)
-                          </p>
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => onRemoveSegment(segment.id)}
-                          className="opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </CardContent>
-                    </Card>
-                  </div>
-                ))}
-              </div>
-            )}
-          </ScrollArea>
-        </CardContent>
-      </Card>
+      <TimelineTrack
+        segments={timelineSegments}
+        sourceVideos={sourceVideos}
+        onReorder={onReorderSegments}
+        onRemove={onRemoveSegment}
+      />
       </div>
     </div>
   );
