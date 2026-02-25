@@ -203,13 +203,18 @@ const Index = () => {
   };
 
   const remixData: RemixData = {
-    segments: timelineSegments.map((seg) => ({
-      videoEventId: seg.videoEventId,
-      videoName: seg.videoName,
-      startTime: seg.startTime,
-      endTime: seg.endTime,
-      duration: seg.duration,
-    })),
+    segments: timelineSegments.map((seg) => {
+      const sourceVideo = sourceVideos.find(v => v.id === seg.sourceVideoId);
+      return {
+        videoEventId: seg.videoEventId,
+        videoName: seg.videoName,
+        authorPubkey: sourceVideo?.pubkey || '',
+        startTime: seg.startTime,
+        endTime: seg.endTime,
+        duration: seg.duration,
+        originalEvent: sourceVideo?.event || {} as any,
+      };
+    }),
     totalDuration: timelineSegments.reduce((sum, seg) => sum + seg.duration, 0),
   };
 

@@ -130,18 +130,18 @@ export function TimelineTrack({ segments, sourceVideos, onReorder, onRemove }: T
       </CardHeader>
       <CardContent>
         {/* Time ruler */}
-        <div className="mb-2 relative" style={{ width: `${maxSeconds * pixelsPerSecond}px` }}>
-          <div className="flex border-b border-border">
+        <div className="mb-4 relative" style={{ width: `${maxSeconds * pixelsPerSecond}px` }}>
+          <div className="flex border-b border-border pb-2">
             {Array.from({ length: maxSeconds + 1 }).map((_, i) => (
               <div
                 key={i}
                 className="relative"
                 style={{ width: `${pixelsPerSecond}px` }}
               >
-                <div className="text-xs text-muted-foreground absolute -top-1">
+                <div className="text-xs text-muted-foreground font-medium">
                   {i}s
                 </div>
-                <div className="absolute top-4 left-0 w-px h-2 bg-border" />
+                <div className="absolute top-6 left-0 w-px h-2 bg-border" />
               </div>
             ))}
           </div>

@@ -33,9 +33,11 @@ export interface RemixData {
   segments: Array<{
     videoEventId: string;
     videoName: string;
+    authorPubkey: string;
     startTime: number;
     endTime: number;
     duration: number;
+    originalEvent: NostrEvent;
   }>;
   totalDuration: number;
 }
