@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useSeoMeta } from '@unhead/react';
-import { TimelineEditor } from '@/components/TimelineEditor';
+import { SourceVideosList } from '@/components/SourceVideosList';
+import { TimelineTrack } from '@/components/TimelineTrack';
 import { JSONViewer } from '@/components/JSONViewer';
 import { RemixPreview } from '@/components/RemixPreview';
 import { VideoPickerModal } from '@/components/VideoPickerModal';
@@ -131,16 +132,21 @@ const Index = () => {
 
         {/* Main Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          {/* Timeline Editor - Takes 2 columns */}
-          <div className="lg:col-span-2">
-            <TimelineEditor
+          {/* Left Column - Source Videos */}
+          <div className="lg:col-span-2 space-y-6">
+            <SourceVideosList
               sourceVideos={sourceVideos}
               onAddSourceVideo={handleAddSourceVideo}
               onRemoveSourceVideo={handleRemoveSourceVideo}
-              timelineSegments={timelineSegments}
               onAddSegment={handleAddSegment}
-              onRemoveSegment={handleRemoveSegment}
-              onReorderSegments={handleReorderSegments}
+            />
+
+            {/* Timeline */}
+            <TimelineTrack
+              segments={timelineSegments}
+              sourceVideos={sourceVideos}
+              onReorder={handleReorderSegments}
+              onRemove={handleRemoveSegment}
             />
           </div>
 
