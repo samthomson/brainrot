@@ -18,39 +18,87 @@ const Index = () => {
   });
 
   const { toast } = useToast();
-  const [sourceVideos, setSourceVideos] = usePersistedState<SourceVideo[]>('video-remix-sources', []);
+  
+  interface SourceSegment {
+    id: string;
+    video: SourceVideo;
+  }
+  
+  const [sourceSegments, setSourceSegments] = usePersistedState<SourceSegment[]>('video-remix-source-segments', []);
   const [timelineSegments, setTimelineSegments] = usePersistedState<TimelineSegment[]>('video-remix-timeline', []);
   const [isPickerOpen, setIsPickerOpen] = useState(false);
+
+  // Derive sourceVideos for preview component
+  const sourceVideos = sourceSegments.map(s => s.video);
 
   const handleAddSourceVideo = () => {
     setIsPickerOpen(true);
   };
 
   const handleSelectVideo = (video: Video) => {
-    // Check if video already added
-    const exists = sourceVideos.some((v) => v.id === video.id);
-    if (exists) {
-      toast({
-        title: 'Already Added',
-        description: 'This video is already in your source videos',
-      });
-      return;
-    }
-    
     const sourceVideo: SourceVideo = {
       ...video,
       segments: [],
     };
-    setSourceVideos((prev) => [...prev, sourceVideo]);
+    
+    const newSegment: SourceSegment = {
+      id: crypto.randomUUID(),
+      video: sourceVideo,
+    };
+    
+    setSourceSegments((prev) => [...prev, newSegment]);
+    
+    // Create initial timeline segment
+    const timelineSegment: TimelineSegment = {
+      id: newSegment.id,
+      sourceVideoId: sourceVideo.id,
+      videoName: sourceVideo.name,
+      videoEventId: sourceVideo.event.id,
+      startTime: 0,
+      endTime: Math.min(5, sourceVideo.duration || 5),
+      duration: Math.min(5, sourceVideo.duration || 5),
+      order: sourceSegments.length,
+    };
+    
+    setTimelineSegments((prev) => [...prev, timelineSegment]);
+    
     toast({
       title: 'Video Added',
-      description: `Added "${video.name}" to source videos`,
+      description: `Added "${video.name}" to timeline`,
+    });
+  };
+
+  const handleDuplicateVideo = (video: SourceVideo) => {
+    const newSegment: SourceSegment = {
+      id: crypto.randomUUID(),
+      video,
+    };
+    
+    setSourceSegments((prev) => [...prev, newSegment]);
+    
+    // Create initial timeline segment for duplicate
+    const timelineSegment: TimelineSegment = {
+      id: newSegment.id,
+      sourceVideoId: video.id,
+      videoName: video.name,
+      videoEventId: video.event.id,
+      startTime: 0,
+      endTime: Math.min(5, video.duration || 5),
+      duration: Math.min(5, video.duration || 5),
+      order: timelineSegments.length,
+    };
+    
+    setTimelineSegments((prev) => [...prev, timelineSegment]);
+    
+    toast({
+      title: 'Segment Duplicated',
+      description: `Created duplicate segment from "${video.name}"`,
     });
   };
 
   const handleClearAll = () => {
     if (confirm('Are you sure you want to clear all videos and timeline? This cannot be undone.')) {
-      setSourceVideos([]);
+      setSourceSegments([]);
       setTimelineSegments([]);
       toast({
         title: 'Cleared',
@@ -59,21 +107,56 @@ const Index = () => {
     }
   };
 
-  const handleRemoveSourceVideo = (id: string) => {
-    setSourceVideos((prev) => prev.filter((v) => v.id !== id));
-    // Remove all segments from this video
-    setTimelineSegments((prev) => prev.filter((s) => s.sourceVideoId !== id));
+  const handleRemoveSegment = (segmentId: string) => {
+    setSourceSegments((prev) => prev.filter((s) => s.id !== segmentId));
+    setTimelineSegments((prev) => 
+      prev.filter((s) => s.id !== segmentId).map((seg, index) => ({ ...seg, order: index }))
+    );
   };
 
-  const handleAddSegment = (segment: TimelineSegment) => {
-    setTimelineSegments((prev) => [...prev, segment]);
-    toast({
-      title: 'Segment Added',
-      description: `Added ${segment.duration.toFixed(2)}s segment to timeline`,
+  const handleSegmentChange = (segmentId: string, segmentData: Omit<TimelineSegment, 'id' | 'order'>) => {
+    setTimelineSegments((prev) => {
+      const existing = prev.find(s => s.id === segmentId);
+      if (!existing) return prev;
+      
+      return prev.map(s => 
+        s.id === segmentId 
+          ? { ...s, ...segmentData }
+          : s
+      );
     });
   };
 
-  const handleReorderSegments = (fromIndex: number, toIndex: number) => {
+  const handleReorderSourceSegments = (fromIndex: number, toIndex: number) => {
+    setSourceSegments((prev) => {
+      const newSegments = [...prev];
+      const [removed] = newSegments.splice(fromIndex, 1);
+      newSegments.splice(toIndex, 0, removed);
+      return newSegments;
+    });
+    
+    // Reorder timeline to match
+    setTimelineSegments((prev) => {
+      const segmentIds = sourceSegments.map(s => s.id);
+      const [movedId] = segmentIds.splice(fromIndex, 1);
+      segmentIds.splice(toIndex, 0, movedId);
+      
+      return prev
+        .sort((a, b) => segmentIds.indexOf(a.id) - segmentIds.indexOf(b.id))
+        .map((seg, index) => ({ ...seg, order: index }));
+    });
+  };
+
+  const handleReorderTimeline = (fromIndex: number, toIndex: number) => {
+    // Reorder source segments
+    setSourceSegments((prev) => {
+      const newSegments = [...prev];
+      const [removed] = newSegments.splice(fromIndex, 1);
+      newSegments.splice(toIndex, 0, removed);
+      return newSegments;
+    });
+    
+    // Reorder timeline
     setTimelineSegments((prev) => {
       const newSegments = [...prev];
       const [removed] = newSegments.splice(fromIndex, 1);
@@ -82,10 +165,12 @@ const Index = () => {
     });
   };
 
-  const handleRemoveSegment = (id: string) => {
-    setTimelineSegments((prev) =>
-      prev.filter((s) => s.id !== id).map((seg, index) => ({ ...seg, order: index }))
-    );
+  const handleRemoveTimelineSegment = (id: string) => {
+    // This is called from timeline track, just reorder
+    const index = timelineSegments.findIndex(s => s.id === id);
+    if (index === -1) return;
+    
+    handleRemoveSegment(id);
   };
 
   const remixData: RemixData = {
@@ -115,7 +200,7 @@ const Index = () => {
               </p>
             </div>
             <div className="flex-1 flex justify-end">
-              {(sourceVideos.length > 0 || timelineSegments.length > 0) && (
+              {(sourceSegments.length > 0 || timelineSegments.length > 0) && (
                 <Button
                   variant="outline"
                   size="sm"
@@ -135,18 +220,20 @@ const Index = () => {
           {/* Left Column - Source Videos */}
           <div className="lg:col-span-2 space-y-6">
             <SourceVideosList
-              sourceVideos={sourceVideos}
+              sourceSegments={sourceSegments}
               onAddSourceVideo={handleAddSourceVideo}
-              onRemoveSourceVideo={handleRemoveSourceVideo}
-              onAddSegment={handleAddSegment}
+              onRemoveSegment={handleRemoveSegment}
+              onDuplicateVideo={handleDuplicateVideo}
+              onSegmentChange={handleSegmentChange}
+              onReorder={handleReorderSourceSegments}
             />
 
             {/* Timeline */}
             <TimelineTrack
               segments={timelineSegments}
               sourceVideos={sourceVideos}
-              onReorder={handleReorderSegments}
-              onRemove={handleRemoveSegment}
+              onReorder={handleReorderTimeline}
+              onRemove={handleRemoveTimelineSegment}
             />
           </div>
 
