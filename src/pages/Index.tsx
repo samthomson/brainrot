@@ -8,16 +8,15 @@ import { VideoPickerModal } from '@/components/VideoPickerModal';
 import { ClearAllDialog } from '@/components/ClearAllDialog';
 import { BlocklistManager } from '@/components/BlocklistManager';
 import { usePersistedState } from '@/hooks/usePersistedState';
-import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Trash2, Eye, FileJson } from 'lucide-react';
+import { Eye, FileJson, Film } from 'lucide-react';
 import { useToast } from '@/hooks/useToast';
 import type { Video, SourceVideo, TimelineSegment, RemixData } from '@/types/video';
 
 const Index = () => {
   useSeoMeta({
-    title: 'Video Remix - Mix and Match Nostr Video Segments',
-    description: 'Create new videos by combining segments from existing short-form Nostr videos.',
+    title: 'defile.video - Remix Nostr Videos',
+    description: 'Cut and combine short-form Nostr videos into new remixes.',
   });
 
   const { toast } = useToast();
@@ -215,27 +214,22 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background p-6">
-      <div className="max-w-[1600px] mx-auto space-y-6">
-        {/* Simple Header */}
-        <div className="flex items-center justify-between pb-4 border-b">
-          <div>
-            <h1 className="text-3xl font-bold">Video Remix</h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              Cut and combine Nostr short-form videos
-            </p>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-zinc-50 to-neutral-100 dark:from-slate-950 dark:via-zinc-950 dark:to-neutral-950">
+      <div className="max-w-[1600px] mx-auto p-6 space-y-6">
+        {/* Header with personality */}
+        <div className="relative">
+          <div className="absolute inset-0 bg-gradient-to-r from-red-500/10 via-orange-500/10 to-pink-500/10 dark:from-red-500/5 dark:via-orange-500/5 dark:to-pink-500/5 blur-3xl -z-10" />
+          <div className="flex items-end justify-between pb-6 border-b-2 border-foreground/10">
+            <div>
+              <div className="flex items-center gap-3 mb-2">
+                <Film className="h-8 w-8" />
+                <h1 className="text-4xl font-black tracking-tight">defile.video</h1>
+              </div>
+              <p className="text-muted-foreground">
+                Cut, remix, and defile Nostr videos
+              </p>
+            </div>
           </div>
-          {(sourceSegments.length > 0 || timelineSegments.length > 0) && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setIsClearDialogOpen(true)}
-              className="text-destructive hover:text-destructive"
-            >
-              <Trash2 className="h-4 w-4 mr-2" />
-              Clear All
-            </Button>
-          )}
         </div>
 
         {/* Timeline - Full Width First */}
@@ -257,6 +251,8 @@ const Index = () => {
               onDuplicateVideo={handleDuplicateVideo}
               onSegmentChange={handleSegmentChange}
               onReorder={handleReorderSourceSegments}
+              onClearAll={() => setIsClearDialogOpen(true)}
+              showClearButton={sourceSegments.length > 0}
             />
           </div>
 

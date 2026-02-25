@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Plus } from 'lucide-react';
+import { Plus, Trash2 } from 'lucide-react';
 import { SourceVideoItem } from '@/components/SourceVideoItem';
 import type { SourceVideo, TimelineSegment } from '@/types/video';
 
@@ -17,6 +17,8 @@ interface SourceVideosListProps {
   onDuplicateVideo: (video: SourceVideo) => void;
   onSegmentChange: (segmentId: string, segment: Omit<TimelineSegment, 'id' | 'order'>) => void;
   onReorder: (fromIndex: number, toIndex: number) => void;
+  onClearAll: () => void;
+  showClearButton: boolean;
 }
 
 export function SourceVideosList({
@@ -26,6 +28,8 @@ export function SourceVideosList({
   onDuplicateVideo,
   onSegmentChange,
   onReorder,
+  onClearAll,
+  showClearButton,
 }: SourceVideosListProps) {
   const [playingSegmentId, setPlayingSegmentId] = useState<string | null>(null);
 
@@ -59,8 +63,8 @@ export function SourceVideosList({
     return (
       <div>
         <h2 className="text-xl font-bold mb-4">Source Videos (0)</h2>
-        <Card className="border-dashed">
-          <CardContent className="py-16 text-center">
+        <Card className="border-dashed border-2 hover:border-primary/50 transition-colors">
+          <CardContent className="py-20 text-center">
             <Button onClick={onAddSourceVideo} size="lg" className="h-24 w-24 rounded-full">
               <Plus className="h-12 w-12" />
             </Button>
@@ -75,7 +79,20 @@ export function SourceVideosList({
 
   return (
     <div className="space-y-4">
-      <h2 className="text-xl font-bold">Source Videos ({sourceSegments.length})</h2>
+      <div className="flex items-center justify-between">
+        <h2 className="text-xl font-bold">Source Videos ({sourceSegments.length})</h2>
+        {showClearButton && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onClearAll}
+            className="text-destructive hover:text-destructive"
+          >
+            <Trash2 className="h-4 w-4 mr-2" />
+            Clear All
+          </Button>
+        )}
+      </div>
 
       <div className="space-y-3">
         {sourceSegments.map((segment, index) => (
@@ -100,10 +117,10 @@ export function SourceVideosList({
         ))}
 
         {/* Big + Button at End */}
-        <Card className="border-dashed">
-          <CardContent className="py-8 flex items-center justify-center">
-            <Button onClick={onAddSourceVideo} size="lg" className="h-16 w-16 rounded-full">
-              <Plus className="h-8 w-8" />
+        <Card className="border-dashed border-2 hover:border-primary/50 transition-colors">
+          <CardContent className="py-12 flex items-center justify-center">
+            <Button onClick={onAddSourceVideo} size="lg" className="h-20 w-20 rounded-full">
+              <Plus className="h-10 w-10" />
             </Button>
           </CardContent>
         </Card>
