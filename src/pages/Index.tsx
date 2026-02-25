@@ -3,6 +3,10 @@ import { useSeoMeta } from '@unhead/react';
 import { TimelineEditor } from '@/components/TimelineEditor';
 import { JSONViewer } from '@/components/JSONViewer';
 import { VideoPickerModal } from '@/components/VideoPickerModal';
+import { usePersistedState } from '@/hooks/usePersistedState';
+import { Button } from '@/components/ui/button';
+import { Trash2 } from 'lucide-react';
+import { useToast } from '@/hooks/useToast';
 import type { Video, SourceVideo, TimelineSegment, RemixData } from '@/types/video';
 
 const Index = () => {
@@ -11,8 +15,9 @@ const Index = () => {
     description: 'Create new videos by combining segments from existing short-form Nostr videos.',
   });
 
-  const [sourceVideos, setSourceVideos] = useState<SourceVideo[]>([]);
-  const [timelineSegments, setTimelineSegments] = useState<TimelineSegment[]>([]);
+  const { toast } = useToast();
+  const [sourceVideos, setSourceVideos] = usePersistedState<SourceVideo[]>('video-remix-sources', []);
+  const [timelineSegments, setTimelineSegments] = usePersistedState<TimelineSegment[]>('video-remix-timeline', []);
   const [isPickerOpen, setIsPickerOpen] = useState(false);
 
   const handleAddSourceVideo = () => {
@@ -23,7 +28,10 @@ const Index = () => {
     // Check if video already added
     const exists = sourceVideos.some((v) => v.id === video.id);
     if (exists) {
-      console.log('Video already added to sources');
+      toast({
+        title: 'Already Added',
+        description: 'This video is already in your source videos',
+      });
       return;
     }
     
@@ -32,6 +40,21 @@ const Index = () => {
       segments: [],
     };
     setSourceVideos((prev) => [...prev, sourceVideo]);
+    toast({
+      title: 'Video Added',
+      description: `Added "${video.name}" to source videos`,
+    });
+  };
+
+  const handleClearAll = () => {
+    if (confirm('Are you sure you want to clear all videos and timeline? This cannot be undone.')) {
+      setSourceVideos([]);
+      setTimelineSegments([]);
+      toast({
+        title: 'Cleared',
+        description: 'All videos and timeline cleared',
+      });
+    }
   };
 
   const handleRemoveSourceVideo = (id: string) => {
@@ -42,6 +65,10 @@ const Index = () => {
 
   const handleAddSegment = (segment: TimelineSegment) => {
     setTimelineSegments((prev) => [...prev, segment]);
+    toast({
+      title: 'Segment Added',
+      description: `Added ${segment.duration.toFixed(2)}s segment to timeline`,
+    });
   };
 
   const handleReorderSegments = (fromIndex: number, toIndex: number) => {
@@ -75,12 +102,30 @@ const Index = () => {
       <div className="max-w-[1800px] mx-auto space-y-4">
         {/* Header */}
         <div className="text-center space-y-2 py-6">
-          <h1 className="text-5xl font-bold bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600 bg-clip-text text-transparent">
-            Video Remix Studio
-          </h1>
-          <p className="text-lg text-muted-foreground">
-            Cut and combine Nostr short-form videos into something new ✨
-          </p>
+          <div className="flex items-center justify-between max-w-4xl mx-auto">
+            <div className="flex-1"></div>
+            <div className="flex-1">
+              <h1 className="text-5xl font-bold bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600 bg-clip-text text-transparent">
+                Video Remix Studio
+              </h1>
+              <p className="text-lg text-muted-foreground">
+                Cut and combine Nostr short-form videos into something new ✨
+              </p>
+            </div>
+            <div className="flex-1 flex justify-end">
+              {(sourceVideos.length > 0 || timelineSegments.length > 0) && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleClearAll}
+                  className="text-destructive hover:text-destructive"
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Clear All
+                </Button>
+              )}
+            </div>
+          </div>
         </div>
 
         {/* Main Layout */}
