@@ -39,12 +39,11 @@ export function VideoCard({ video, onClick, onQuickAdd, showQuickAdd = false, on
 
   useEffect(() => {
     // If no thumbnail URL, try to generate one from the video
-    if (!video.thumbnailUrl && videoRef.current) {
+    if (!video.thumbnailUrl && !generatedThumbnail && videoRef.current) {
       const videoEl = videoRef.current;
       
       const generateThumbnail = () => {
         try {
-          // Seek to 1 second or 10% of duration, whichever is less
           const seekTime = Math.min(1, (videoEl.duration || 10) * 0.1);
           videoEl.currentTime = seekTime;
         } catch (error) {
@@ -60,11 +59,15 @@ export function VideoCard({ video, onClick, onQuickAdd, showQuickAdd = false, on
           const ctx = canvas.getContext('2d');
           if (ctx) {
             ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
-            const thumbnail = canvas.toDataURL('image/jpeg', 0.7);
+            const thumbnail = canvas.toDataURL('image/jpeg', 0.5);
             setGeneratedThumbnail(thumbnail);
           }
         } catch (error) {
           console.error('Error generating thumbnail:', error);
+        } finally {
+          // Cleanup
+          videoEl.removeEventListener('loadedmetadata', generateThumbnail);
+          videoEl.removeEventListener('seeked', captureThumbnail);
         }
       };
 
@@ -76,7 +79,7 @@ export function VideoCard({ video, onClick, onQuickAdd, showQuickAdd = false, on
         videoEl.removeEventListener('seeked', captureThumbnail);
       };
     }
-  }, [video.thumbnailUrl]);
+  }, [video.thumbnailUrl, generatedThumbnail]);
 
   const formatDate = (timestamp: number) => {
     try {

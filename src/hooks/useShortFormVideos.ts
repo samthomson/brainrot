@@ -62,7 +62,7 @@ export function useShortFormVideos(searchTerm?: string) {
       }> = [
         {
           kinds: [22, 34236],
-          limit: 500,
+          limit: 200, // Reduced from 500 for better performance
         },
       ];
 

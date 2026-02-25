@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useSeoMeta } from '@unhead/react';
 import { SourceVideosList } from '@/components/SourceVideosList';
 import { TimelineTrack } from '@/components/TimelineTrack';
@@ -118,10 +118,19 @@ const Index = () => {
     );
   };
 
-  const handleSegmentChange = (segmentId: string, segmentData: Omit<TimelineSegment, 'id' | 'order'>) => {
+  const handleSegmentChange = useCallback((segmentId: string, segmentData: Omit<TimelineSegment, 'id' | 'order'>) => {
     setTimelineSegments((prev) => {
       const existing = prev.find(s => s.id === segmentId);
       if (!existing) return prev;
+      
+      // Check if data actually changed to avoid unnecessary updates
+      if (
+        existing.startTime === segmentData.startTime &&
+        existing.endTime === segmentData.endTime &&
+        existing.duration === segmentData.duration
+      ) {
+        return prev;
+      }
       
       return prev.map(s => 
         s.id === segmentId 
@@ -129,7 +138,7 @@ const Index = () => {
           : s
       );
     });
-  };
+  }, [setTimelineSegments]);
 
   const handleReorderSourceSegments = (fromIndex: number, toIndex: number) => {
     setSourceSegments((prev) => {

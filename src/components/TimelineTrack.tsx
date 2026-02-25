@@ -14,8 +14,10 @@ interface TimelineTrackProps {
 export function TimelineTrack({ segments, sourceVideos, onReorder, onRemove }: TimelineTrackProps) {
   const [thumbnails, setThumbnails] = useState<Record<string, string>>({});
   
-  // Generate thumbnails for each segment
+  // Generate thumbnails for each segment (optimized with cleanup)
   useEffect(() => {
+    const videoElements: HTMLVideoElement[] = [];
+
     segments.forEach((segment) => {
       if (thumbnails[segment.id]) return;
       
@@ -25,11 +27,12 @@ export function TimelineTrack({ segments, sourceVideos, onReorder, onRemove }: T
       const video = document.createElement('video');
       video.crossOrigin = 'anonymous';
       video.muted = true;
+      video.preload = 'metadata';
       video.src = sourceVideo.url;
+      videoElements.push(video);
 
       const generateThumbnail = () => {
         try {
-          // Seek to middle of segment for thumbnail
           const seekTime = segment.startTime + (segment.duration / 2);
           video.currentTime = seekTime;
         } catch (error) {
@@ -45,11 +48,16 @@ export function TimelineTrack({ segments, sourceVideos, onReorder, onRemove }: T
           const ctx = canvas.getContext('2d');
           if (ctx) {
             ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-            const thumbnail = canvas.toDataURL('image/jpeg', 0.7);
+            const thumbnail = canvas.toDataURL('image/jpeg', 0.5);
             setThumbnails((prev) => ({ ...prev, [segment.id]: thumbnail }));
           }
         } catch (error) {
           console.error('Error generating thumbnail:', error);
+        } finally {
+          // Clean up
+          video.removeEventListener('loadedmetadata', generateThumbnail);
+          video.removeEventListener('seeked', captureThumbnail);
+          video.src = '';
         }
       };
 
@@ -57,7 +65,15 @@ export function TimelineTrack({ segments, sourceVideos, onReorder, onRemove }: T
       video.addEventListener('seeked', captureThumbnail);
       video.load();
     });
-  }, [segments, sourceVideos, thumbnails]);
+
+    return () => {
+      // Cleanup all video elements
+      videoElements.forEach(video => {
+        video.src = '';
+        video.load();
+      });
+    };
+  }, [segments, sourceVideos]);
 
   const handleDragStart = (e: React.DragEvent, index: number) => {
     e.dataTransfer.effectAllowed = 'move';

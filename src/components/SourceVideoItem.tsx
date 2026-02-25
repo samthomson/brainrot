@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
@@ -20,16 +20,17 @@ export function SourceVideoItem({ video, segmentId, index, onRemove, onDuplicate
   const [currentTime, setCurrentTime] = useState(0);
   const [videoDuration, setVideoDuration] = useState(0);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const updateTimeoutRef = useRef<NodeJS.Timeout>();
 
-  const handleLoadedMetadata = () => {
+  const handleLoadedMetadata = useCallback(() => {
     if (videoRef.current) {
       const duration = videoRef.current.duration;
       setVideoDuration(duration);
       setRange([0, Math.min(5, duration)]);
     }
-  };
+  }, []);
 
-  const handleTimeUpdate = () => {
+  const handleTimeUpdate = useCallback(() => {
     if (videoRef.current) {
       const time = videoRef.current.currentTime;
       setCurrentTime(time);
@@ -41,9 +42,9 @@ export function SourceVideoItem({ video, segmentId, index, onRemove, onDuplicate
         videoRef.current.currentTime = range[0];
       }
     }
-  };
+  }, [isPlaying, range]);
 
-  const togglePlayPause = () => {
+  const togglePlayPause = useCallback(() => {
     if (videoRef.current) {
       if (isPlaying) {
         videoRef.current.pause();
@@ -53,7 +54,7 @@ export function SourceVideoItem({ video, segmentId, index, onRemove, onDuplicate
       }
       setIsPlaying(!isPlaying);
     }
-  };
+  }, [isPlaying, range]);
 
   useEffect(() => {
     if (videoRef.current && !isPlaying) {
@@ -63,17 +64,29 @@ export function SourceVideoItem({ video, segmentId, index, onRemove, onDuplicate
     }
   }, [range, currentTime, isPlaying]);
 
-  // Auto-update timeline when range changes
+  // Debounced auto-update timeline when range changes
   useEffect(() => {
-    onSegmentChange(segmentId, {
-      sourceVideoId: video.id,
-      videoName: video.name,
-      videoEventId: video.event.id,
-      startTime: range[0],
-      endTime: range[1],
-      duration: range[1] - range[0],
-    });
-  }, [range, video, segmentId, onSegmentChange]);
+    if (updateTimeoutRef.current) {
+      clearTimeout(updateTimeoutRef.current);
+    }
+
+    updateTimeoutRef.current = setTimeout(() => {
+      onSegmentChange(segmentId, {
+        sourceVideoId: video.id,
+        videoName: video.name,
+        videoEventId: video.event.id,
+        startTime: range[0],
+        endTime: range[1],
+        duration: range[1] - range[0],
+      });
+    }, 100); // Debounce 100ms to avoid rapid updates while dragging
+
+    return () => {
+      if (updateTimeoutRef.current) {
+        clearTimeout(updateTimeoutRef.current);
+      }
+    };
+  }, [range[0], range[1], video.id, video.name, video.event.id, segmentId, onSegmentChange]);
 
   const maxDuration = videoDuration || video.duration || 100;
 
@@ -119,6 +132,7 @@ export function SourceVideoItem({ video, segmentId, index, onRemove, onDuplicate
                 onEnded={() => setIsPlaying(false)}
                 playsInline
                 crossOrigin="anonymous"
+                preload="metadata"
               />
               <div className="absolute bottom-2 left-1/2 -translate-x-1/2">
                 <Button
