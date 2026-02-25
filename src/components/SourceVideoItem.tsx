@@ -116,9 +116,12 @@ export function SourceVideoItem({
     <Card className="group">
       <CardContent className="p-4">
         <div className="flex gap-4 items-center">
-          {/* Drag Handle */}
-          <div className="cursor-move">
+          {/* Drag Handle + Number */}
+          <div className="cursor-move flex items-center gap-2">
             <GripVertical className="h-5 w-5 text-muted-foreground" />
+            <div className="flex items-center justify-center h-8 w-8 rounded-full bg-primary/10 text-primary font-bold text-sm">
+              {index + 1}
+            </div>
           </div>
 
           {/* Video Player */}
@@ -186,11 +189,13 @@ export function SourceVideoItem({
           <div className="flex flex-col gap-2">
             <Button
               variant="outline"
-              size="icon"
+              size="sm"
               onClick={() => onDuplicate(video)}
               title="Duplicate segment"
+              className="h-9"
             >
-              <Copy className="h-4 w-4" />
+              <Copy className="h-4 w-4 mr-1" />
+              Duplicate
             </Button>
             <Button
               variant="ghost"

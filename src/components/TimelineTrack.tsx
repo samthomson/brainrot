@@ -164,7 +164,7 @@ export function TimelineTrack({ segments, sourceVideos, onReorder, onRemove }: T
                   className="relative group cursor-move"
                   style={{ width: `${segmentWidth}px` }}
                 >
-                  <Card className="h-20 border-2 border-primary/50 hover:border-primary transition-colors overflow-hidden">
+                  <Card className="h-40 border-2 border-primary/50 hover:border-primary transition-colors overflow-hidden">
                     <CardContent className="p-0 h-full flex relative">
                       {/* Thumbnail */}
                       {thumbnail ? (

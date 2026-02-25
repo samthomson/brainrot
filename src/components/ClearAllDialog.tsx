@@ -28,7 +28,7 @@ export function ClearAllDialog({ open, onOpenChange, onConfirm }: ClearAllDialog
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>
           <AlertDialogAction onClick={onConfirm} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-            Clear All
+            Clear
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
