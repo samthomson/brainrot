@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { Play } from 'lucide-react';
+import { Play, Plus } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { formatDistanceToNow } from 'date-fns';
 import { useVideoAuthor } from '@/hooks/useVideoAuthor';
 import type { Video } from '@/types/video';
@@ -8,9 +9,11 @@ import type { Video } from '@/types/video';
 interface VideoCardProps {
   video: Video;
   onClick: () => void;
+  onQuickAdd?: () => void;
+  showQuickAdd?: boolean;
 }
 
-export function VideoCard({ video, onClick }: VideoCardProps) {
+export function VideoCard({ video, onClick, onQuickAdd, showQuickAdd = false }: VideoCardProps) {
   const { displayName } = useVideoAuthor(video);
   const [generatedThumbnail, setGeneratedThumbnail] = useState<string | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -101,6 +104,23 @@ export function VideoCard({ video, onClick }: VideoCardProps) {
           <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center">
             <Play className="h-12 w-12 text-white opacity-0 group-hover:opacity-100 transition-opacity drop-shadow-lg" />
           </div>
+          
+          {/* Quick Add Button */}
+          {showQuickAdd && onQuickAdd && (
+            <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+              <Button
+                size="icon"
+                className="rounded-full shadow-lg"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onQuickAdd();
+                }}
+              >
+                <Plus className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
+          
           {video.duration > 0 && (
             <div className="absolute bottom-2 right-2 bg-black/80 text-white text-xs px-2 py-1 rounded">
               {video.duration.toFixed(0)}s

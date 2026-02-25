@@ -168,6 +168,11 @@ export function VideoPickerModal({
                       key={video.id}
                       video={video}
                       onClick={() => handlePreview(video)}
+                      onQuickAdd={() => {
+                        onSelectVideo(video);
+                        onClose();
+                      }}
+                      showQuickAdd={true}
                     />
                   ))}
                 </div>

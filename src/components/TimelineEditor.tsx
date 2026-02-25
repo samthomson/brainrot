@@ -197,7 +197,7 @@ export function TimelineEditor({
                     <div className="flex-1 min-w-0">
                       <p className="font-medium truncate text-sm">{video.name}</p>
                       <p className="text-xs text-muted-foreground">
-                        {video.duration > 0 ? `${video.duration.toFixed(1)}s` : 'Loading...'}
+                        {video.duration > 0 ? `${video.duration.toFixed(1)}s` : ''}
                       </p>
                     </div>
                     <Button
