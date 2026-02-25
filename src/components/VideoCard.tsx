@@ -1,9 +1,10 @@
 import { useState, useRef, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { Play, Plus } from 'lucide-react';
+import { Play, Plus, Copy, Ban } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { formatDistanceToNow } from 'date-fns';
 import { useVideoAuthor } from '@/hooks/useVideoAuthor';
+import { useToast } from '@/hooks/useToast';
 import type { Video } from '@/types/video';
 
 interface VideoCardProps {
@@ -11,12 +12,30 @@ interface VideoCardProps {
   onClick: () => void;
   onQuickAdd?: () => void;
   showQuickAdd?: boolean;
+  onBlockUser?: (pubkey: string) => void;
 }
 
-export function VideoCard({ video, onClick, onQuickAdd, showQuickAdd = false }: VideoCardProps) {
+export function VideoCard({ video, onClick, onQuickAdd, showQuickAdd = false, onBlockUser }: VideoCardProps) {
   const { displayName } = useVideoAuthor(video);
   const [generatedThumbnail, setGeneratedThumbnail] = useState<string | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const { toast } = useToast();
+
+  const handleCopyPubkey = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    await navigator.clipboard.writeText(video.pubkey);
+    toast({
+      title: 'Copied!',
+      description: 'Pubkey copied to clipboard',
+    });
+  };
+
+  const handleBlock = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (onBlockUser) {
+      onBlockUser(video.pubkey);
+    }
+  };
 
   useEffect(() => {
     // If no thumbnail URL, try to generate one from the video
@@ -105,12 +124,12 @@ export function VideoCard({ video, onClick, onQuickAdd, showQuickAdd = false }: 
             <Play className="h-12 w-12 text-white opacity-0 group-hover:opacity-100 transition-opacity drop-shadow-lg" />
           </div>
           
-          {/* Quick Add Button */}
-          {showQuickAdd && onQuickAdd && (
-            <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+          {/* Action Buttons */}
+          <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
+            {showQuickAdd && onQuickAdd && (
               <Button
                 size="icon"
-                className="rounded-full shadow-lg"
+                className="rounded-full shadow-lg h-8 w-8"
                 onClick={(e) => {
                   e.stopPropagation();
                   onQuickAdd();
@@ -118,8 +137,28 @@ export function VideoCard({ video, onClick, onQuickAdd, showQuickAdd = false }: 
               >
                 <Plus className="h-4 w-4" />
               </Button>
-            </div>
-          )}
+            )}
+            <Button
+              size="icon"
+              variant="secondary"
+              className="rounded-full shadow-lg h-8 w-8"
+              onClick={handleCopyPubkey}
+              title="Copy pubkey"
+            >
+              <Copy className="h-3 w-3" />
+            </Button>
+            {onBlockUser && (
+              <Button
+                size="icon"
+                variant="destructive"
+                className="rounded-full shadow-lg h-8 w-8"
+                onClick={handleBlock}
+                title="Block this user"
+              >
+                <Ban className="h-3 w-3" />
+              </Button>
+            )}
+          </div>
           
           {video.duration > 0 && (
             <div className="absolute bottom-2 right-2 bg-black/80 text-white text-xs px-2 py-1 rounded">

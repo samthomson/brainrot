@@ -6,6 +6,7 @@ import { JSONViewer } from '@/components/JSONViewer';
 import { RemixPreview } from '@/components/RemixPreview';
 import { VideoPickerModal } from '@/components/VideoPickerModal';
 import { ClearAllDialog } from '@/components/ClearAllDialog';
+import { BlocklistManager } from '@/components/BlocklistManager';
 import { usePersistedState } from '@/hooks/usePersistedState';
 import { Button } from '@/components/ui/button';
 import { Trash2 } from 'lucide-react';
@@ -27,8 +28,10 @@ const Index = () => {
   
   const [sourceSegments, setSourceSegments] = usePersistedState<SourceSegment[]>('video-remix-source-segments', []);
   const [timelineSegments, setTimelineSegments] = usePersistedState<TimelineSegment[]>('video-remix-timeline', []);
+  const [blocklist, setBlocklist] = usePersistedState<string[]>('video-remix-blocklist', []);
   const [isPickerOpen, setIsPickerOpen] = useState(false);
   const [isClearDialogOpen, setIsClearDialogOpen] = useState(false);
+  const [isBlocklistOpen, setIsBlocklistOpen] = useState(false);
 
   // Derive sourceVideos for preview component
   const sourceVideos = sourceSegments.map(s => s.video);
@@ -174,6 +177,23 @@ const Index = () => {
     handleRemoveSegment(id);
   };
 
+  const handleAddToBlocklist = (pubkey: string) => {
+    if (blocklist.includes(pubkey)) return;
+    setBlocklist((prev) => [...prev, pubkey]);
+    toast({
+      title: 'User Blocked',
+      description: 'Videos from this user will be hidden',
+    });
+  };
+
+  const handleRemoveFromBlocklist = (pubkey: string) => {
+    setBlocklist((prev) => prev.filter(p => p !== pubkey));
+    toast({
+      title: 'User Unblocked',
+      description: 'Videos from this user will now appear',
+    });
+  };
+
   const remixData: RemixData = {
     segments: timelineSegments.map((seg) => ({
       videoEventId: seg.videoEventId,
@@ -266,6 +286,21 @@ const Index = () => {
         open={isPickerOpen}
         onClose={() => setIsPickerOpen(false)}
         onSelectVideo={handleSelectVideo}
+        blocklist={blocklist}
+        onAddToBlocklist={handleAddToBlocklist}
+        onOpenBlocklistManager={() => {
+          setIsPickerOpen(false);
+          setIsBlocklistOpen(true);
+        }}
+      />
+
+      {/* Blocklist Manager */}
+      <BlocklistManager
+        open={isBlocklistOpen}
+        onClose={() => setIsBlocklistOpen(false)}
+        blocklist={blocklist}
+        onAddToBlocklist={handleAddToBlocklist}
+        onRemoveFromBlocklist={handleRemoveFromBlocklist}
       />
 
       {/* Clear All Confirmation Dialog */}

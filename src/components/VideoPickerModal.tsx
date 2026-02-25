@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Search, Play, Pause, Check, Loader2, ArrowLeft } from 'lucide-react';
+import { Search, Play, Pause, Check, Loader2, ArrowLeft, Settings } from 'lucide-react';
 import { useShortFormVideos } from '@/hooks/useShortFormVideos';
 import { useVideoAuthor } from '@/hooks/useVideoAuthor';
 import { VideoCard } from '@/components/VideoCard';
@@ -20,12 +20,18 @@ interface VideoPickerModalProps {
   open: boolean;
   onClose: () => void;
   onSelectVideo: (video: Video) => void;
+  blocklist: string[];
+  onAddToBlocklist: (pubkey: string) => void;
+  onOpenBlocklistManager: () => void;
 }
 
 export function VideoPickerModal({
   open,
   onClose,
   onSelectVideo,
+  blocklist,
+  onAddToBlocklist,
+  onOpenBlocklistManager,
 }: VideoPickerModalProps) {
   const [searchInput, setSearchInput] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
@@ -34,7 +40,10 @@ export function VideoPickerModal({
   const videoRef = useRef<HTMLVideoElement>(null);
   const searchTimeoutRef = useRef<NodeJS.Timeout>();
 
-  const { data: videos = [], isLoading } = useShortFormVideos(searchQuery);
+  const { data: allVideos = [], isLoading } = useShortFormVideos(searchQuery);
+  
+  // Filter out blocked users
+  const videos = allVideos.filter(video => !blocklist.includes(video.pubkey));
 
   useEffect(() => {
     if (!open) {
@@ -106,14 +115,27 @@ export function VideoPickerModal({
       <DialogContent className="max-w-7xl h-[90vh] p-0 gap-0" hideClose>
         {!previewVideo && (
           <DialogHeader className="px-6 pt-6 pb-4 border-b">
-            <div className="flex items-start justify-between">
-              <div>
-                <DialogTitle className="text-2xl">Browse Nostr Videos</DialogTitle>
-                <p className="text-sm text-muted-foreground mt-1">
-                  {videos.length} videos available
-                </p>
-              </div>
+          <div className="flex items-start justify-between">
+            <div>
+              <DialogTitle className="text-2xl">Browse Nostr Videos</DialogTitle>
+              <p className="text-sm text-muted-foreground mt-1">
+                {videos.length} videos available
+                {blocklist.length > 0 && (
+                  <span className="ml-2">
+                    ({blocklist.length} user{blocklist.length !== 1 ? 's' : ''} blocked)
+                  </span>
+                )}
+              </p>
             </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onOpenBlocklistManager}
+            >
+              <Settings className="h-4 w-4 mr-2" />
+              Blocklist
+            </Button>
+          </div>
             <div className="relative mt-4">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
@@ -173,6 +195,12 @@ export function VideoPickerModal({
                         onClose();
                       }}
                       showQuickAdd={true}
+                      onBlockUser={(pubkey) => {
+                        onAddToBlocklist(pubkey);
+                        if (previewVideo?.pubkey === pubkey) {
+                          setPreviewVideo(null);
+                        }
+                      }}
                     />
                   ))}
                 </div>
