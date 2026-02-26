@@ -129,27 +129,30 @@ export function TimelineTrack({ segments, sourceVideos, onReorder, onRemove }: T
         </CardTitle>
       </CardHeader>
       <CardContent>
-        {/* Time ruler */}
-        <div className="mb-4 relative" style={{ width: `${maxSeconds * pixelsPerSecond}px` }}>
-          <div className="flex border-b border-border pb-2">
-            {Array.from({ length: maxSeconds + 1 }).map((_, i) => (
-              <div
-                key={i}
-                className="relative"
-                style={{ width: `${pixelsPerSecond}px` }}
-              >
-                <div className="text-xs text-muted-foreground font-medium">
-                  {i}s
-                </div>
-                <div className="absolute top-6 left-0 w-px h-2 bg-border" />
+        {/* Scrollable container for both ruler and track */}
+        <div className="overflow-x-auto">
+          <div style={{ minWidth: `${maxSeconds * pixelsPerSecond}px` }}>
+            {/* Time ruler */}
+            <div className="mb-4 relative">
+              <div className="flex border-b border-border pb-2">
+                {Array.from({ length: maxSeconds + 1 }).map((_, i) => (
+                  <div
+                    key={i}
+                    className="relative"
+                    style={{ width: `${pixelsPerSecond}px` }}
+                  >
+                    <div className="text-xs text-muted-foreground font-medium">
+                      {i}s
+                    </div>
+                    <div className="absolute top-6 left-0 w-px h-2 bg-border" />
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-        </div>
+            </div>
 
-        {/* Timeline track */}
-        <div className="relative bg-muted/30 rounded-lg p-2 min-h-24 overflow-x-auto">
-          <div className="flex gap-1 items-center" style={{ minWidth: `${maxSeconds * pixelsPerSecond}px` }}>
+            {/* Timeline track */}
+            <div className="relative bg-muted/30 rounded-lg p-2 min-h-24">
+              <div className="flex gap-1 items-center">
             {segments.map((segment, index) => {
               const segmentWidth = segment.duration * pixelsPerSecond;
               const thumbnail = thumbnails[segment.id];
@@ -206,6 +209,8 @@ export function TimelineTrack({ segments, sourceVideos, onReorder, onRemove }: T
                 </div>
               );
             })}
+              </div>
+            </div>
           </div>
         </div>
       </CardContent>
