@@ -16,6 +16,7 @@ export function RemixPreview({ segments, sourceVideos }: RemixPreviewProps) {
   const [segmentProgress, setSegmentProgress] = useState(0);
   const [totalProgress, setTotalProgress] = useState(0);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const preloadVideoRef = useRef<HTMLVideoElement>(null);
 
   // Reset to first segment when segments change
   useEffect(() => {
@@ -30,6 +31,20 @@ export function RemixPreview({ segments, sourceVideos }: RemixPreviewProps) {
   const sourceVideo = currentSegment
     ? sourceVideos.find((v) => v.id === currentSegment.sourceVideoId)
     : null;
+
+  // Preload next segment
+  const nextSegment = segments[currentSegmentIndex + 1];
+  const nextSourceVideo = nextSegment
+    ? sourceVideos.find((v) => v.id === nextSegment.sourceVideoId)
+    : null;
+
+  useEffect(() => {
+    if (preloadVideoRef.current && nextSegment && nextSourceVideo) {
+      preloadVideoRef.current.src = nextSourceVideo.url;
+      preloadVideoRef.current.currentTime = nextSegment.startTime;
+      preloadVideoRef.current.load();
+    }
+  }, [nextSegment, nextSourceVideo]);
 
   // Load current segment
   useEffect(() => {
@@ -187,6 +202,17 @@ export function RemixPreview({ segments, sourceVideos }: RemixPreviewProps) {
             <div className="w-full h-full flex items-center justify-center text-white">
               Loading...
             </div>
+          )}
+          
+          {/* Hidden preload video for next segment */}
+          {nextSourceVideo && nextSegment && (
+            <video
+              ref={preloadVideoRef}
+              className="hidden"
+              preload="auto"
+              crossOrigin="anonymous"
+              muted
+            />
           )}
         </div>
 
