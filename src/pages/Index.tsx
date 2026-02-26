@@ -15,8 +15,8 @@ import type { Video, SourceVideo, TimelineSegment, RemixData } from '@/types/vid
 
 const Index = () => {
   useSeoMeta({
-    title: 'defile.video - Remix Nostr Videos',
-    description: 'Cut and combine short-form Nostr videos into new remixes.',
+    title: 'brainrot.rehab - Remix Nostr Videos',
+    description: 'Cut and combine short-form Nostr videos. Rehab your brainrot.',
   });
 
   const { toast } = useToast();
@@ -223,15 +223,15 @@ const Index = () => {
       <div className="max-w-[1600px] mx-auto p-6 space-y-6">
         {/* Header with personality */}
         <div className="relative">
-          <div className="absolute inset-0 bg-gradient-to-r from-red-500/10 via-orange-500/10 to-pink-500/10 dark:from-red-500/5 dark:via-orange-500/5 dark:to-pink-500/5 blur-3xl -z-10" />
+          <div className="absolute inset-0 bg-gradient-to-r from-purple-500/10 via-blue-500/10 to-cyan-500/10 dark:from-purple-500/5 dark:via-blue-500/5 dark:to-cyan-500/5 blur-3xl -z-10" />
           <div className="flex items-end justify-between pb-6 border-b-2 border-foreground/10">
             <div>
               <div className="flex items-center gap-3 mb-2">
                 <Film className="h-8 w-8" />
-                <h1 className="text-4xl font-black tracking-tight">defile.video</h1>
+                <h1 className="text-4xl font-black tracking-tight">brainrot.rehab</h1>
               </div>
               <p className="text-muted-foreground">
-                Cut, remix, and defile Nostr videos
+                Cut, remix, and rehab your brainrot
               </p>
             </div>
           </div>
