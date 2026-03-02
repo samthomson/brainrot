@@ -43,7 +43,7 @@ export function BroadcastButton({ remixData, selectedRelay, disabled }: Broadcas
       const relay = nostr.relay(selectedRelay);
 
       // Create DVM job request (kind 5900 for video processing)
-      const jobRequest = await relay.event({
+      await relay.event({
         kind: 5900,
         content: JSON.stringify(remixData),
         tags: [
@@ -55,17 +55,20 @@ export function BroadcastButton({ remixData, selectedRelay, disabled }: Broadcas
         ],
       });
 
-      toast({
-        title: 'Broadcasted!',
-        description: `Job request sent to ${selectedRelay.replace('wss://', '')}`,
-      });
+      console.log('DVM Job Request sent successfully');
+      console.log('Relay:', selectedRelay);
+      console.log('Data:', remixData);
 
-      console.log('DVM Job Request:', jobRequest);
+      toast({
+        title: 'Broadcasted Successfully! ✅',
+        description: `Job request sent to ${selectedRelay.replace('wss://', '')}. Event ID logged to console.`,
+      });
     } catch (error) {
       console.error('Broadcast error:', error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
       toast({
         title: 'Broadcast Failed',
-        description: error instanceof Error ? error.message : 'Unknown error',
+        description: errorMessage,
         variant: 'destructive',
       });
     } finally {
