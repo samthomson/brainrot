@@ -8,9 +8,10 @@ import { RemixPreview } from '@/components/RemixPreview';
 import { VideoPickerModal } from '@/components/VideoPickerModal';
 import { ClearAllDialog } from '@/components/ClearAllDialog';
 import { BlocklistManager } from '@/components/BlocklistManager';
+import { DVMSettings } from '@/components/DVMSettings';
 import { usePersistedState } from '@/hooks/usePersistedState';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Eye, FileJson, Film } from 'lucide-react';
+import { Eye, FileJson, Film, Settings } from 'lucide-react';
 import { useToast } from '@/hooks/useToast';
 import { LoginArea } from '@/components/auth/LoginArea';
 import { RelaySelector } from '@/components/RelaySelector';
@@ -35,12 +36,13 @@ const Index = () => {
   const [sourceSegments, setSourceSegments] = usePersistedState<SourceSegment[]>('video-remix-source-segments', []);
   const [timelineSegments, setTimelineSegments] = usePersistedState<TimelineSegment[]>('video-remix-timeline', []);
   const [blocklist, setBlocklist] = usePersistedState<string[]>('video-remix-blocklist', []);
-  const [selectedRelay, setSelectedRelay] = usePersistedState<string>('video-remix-relay', 'wss://relay.primal.net');
-  const [blossomUploadUrl] = usePersistedState<string>('video-remix-blossom-url', 'https://blossom.primal.net');
-  const [dvmPubkey] = usePersistedState<string>('video-remix-dvm-pubkey', '');
+  const [selectedRelay, setSelectedRelay] = usePersistedState<string>('video-remix-relay', 'wss://relay.local');
+  const [blossomUploadUrl, setBlossomUploadUrl] = usePersistedState<string>('video-remix-blossom-url', 'https://blossom.primal.net');
+  const [dvmPubkey, setDvmPubkey] = usePersistedState<string>('video-remix-dvm-pubkey', '');
   const [isPickerOpen, setIsPickerOpen] = useState(false);
   const [isClearDialogOpen, setIsClearDialogOpen] = useState(false);
   const [isBlocklistOpen, setIsBlocklistOpen] = useState(false);
+  const [isDvmSettingsOpen, setIsDvmSettingsOpen] = useState(false);
 
   const { jobState, broadcastJob, resetJob } = useDVMJob(dvmPubkey, selectedRelay);
 
@@ -262,6 +264,14 @@ const Index = () => {
               </p>
             </div>
             <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsDvmSettingsOpen(true)}
+                title="DVM Settings"
+              >
+                <Settings className="h-4 w-4" />
+              </Button>
               <RelaySelector
                 selectedRelay={selectedRelay}
                 onRelayChange={setSelectedRelay}
@@ -385,6 +395,16 @@ const Index = () => {
         open={isClearDialogOpen}
         onOpenChange={setIsClearDialogOpen}
         onConfirm={handleClearAll}
+      />
+
+      {/* DVM Settings */}
+      <DVMSettings
+        open={isDvmSettingsOpen}
+        onClose={() => setIsDvmSettingsOpen(false)}
+        dvmPubkey={dvmPubkey}
+        onDvmPubkeyChange={setDvmPubkey}
+        blossomUploadUrl={blossomUploadUrl}
+        onBlossomUrlChange={setBlossomUploadUrl}
       />
     </div>
   );

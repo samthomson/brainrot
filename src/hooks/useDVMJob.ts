@@ -30,7 +30,16 @@ export function useDVMJob(dvmPubkey: string, selectedRelay: string) {
 
   // Subscribe to task events for current job
   useEffect(() => {
-    if (!currentJobId || !dvmPubkey) return;
+    if (!currentJobId || !dvmPubkey) {
+      console.log('Not subscribing - missing jobId or dvmPubkey:', { currentJobId, dvmPubkey });
+      return;
+    }
+
+    console.log('🔔 Subscribing to DVM tasks:', {
+      jobId: currentJobId,
+      dvmPubkey,
+      relay: selectedRelay,
+    });
 
     const relay = nostr.relay(selectedRelay);
     
@@ -44,8 +53,9 @@ export function useDVMJob(dvmPubkey: string, selectedRelay: string) {
 
     sub.on('event', async (taskEvent: NostrEvent) => {
       try {
+        console.log('📨 Received task event:', taskEvent);
         const task: DVMTask = JSON.parse(taskEvent.content);
-        console.log('Received task:', task);
+        console.log('📋 Parsed task:', task);
         
         setJobState({ status: 'pending', currentTask: task });
 
