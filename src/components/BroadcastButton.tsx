@@ -53,13 +53,14 @@ export function BroadcastButton({ remixData, selectedRelay, disabled }: Broadcas
       // Sign the event first
       const unsignedEvent = {
         kind: 5900,
-        content: JSON.stringify(remixData),
+        content: JSON.stringify(remixData), // Full data goes in content
         tags: [
-          ['i', JSON.stringify(remixData), 'text'],
           ['output', 'video/mp4'],
           ['relays', selectedRelay],
+          ['param', 'segments', remixData.segments.length.toString()],
+          ['param', 'duration', remixData.totalDuration.toFixed(2)],
           ['t', 'video-remix'],
-          ['alt', 'Video remix job request: combine multiple video segments into one output video'],
+          ['alt', `Video remix job: combine ${remixData.segments.length} segments into one video (${remixData.totalDuration.toFixed(2)}s total)`],
         ],
         created_at: Math.floor(Date.now() / 1000),
       };
