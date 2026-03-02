@@ -11,6 +11,9 @@ import { usePersistedState } from '@/hooks/usePersistedState';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Eye, FileJson, Film } from 'lucide-react';
 import { useToast } from '@/hooks/useToast';
+import { LoginArea } from '@/components/auth/LoginArea';
+import { RelaySelector } from '@/components/RelaySelector';
+import { BroadcastButton } from '@/components/BroadcastButton';
 import type { Video, SourceVideo, TimelineSegment, RemixData } from '@/types/video';
 
 const Index = () => {
@@ -29,6 +32,7 @@ const Index = () => {
   const [sourceSegments, setSourceSegments] = usePersistedState<SourceSegment[]>('video-remix-source-segments', []);
   const [timelineSegments, setTimelineSegments] = usePersistedState<TimelineSegment[]>('video-remix-timeline', []);
   const [blocklist, setBlocklist] = usePersistedState<string[]>('video-remix-blocklist', []);
+  const [selectedRelay, setSelectedRelay] = usePersistedState<string>('video-remix-relay', 'wss://relay.damus.io');
   const [isPickerOpen, setIsPickerOpen] = useState(false);
   const [isClearDialogOpen, setIsClearDialogOpen] = useState(false);
   const [isBlocklistOpen, setIsBlocklistOpen] = useState(false);
@@ -234,6 +238,13 @@ const Index = () => {
                 Cut, remix, and rehab your brainrot
               </p>
             </div>
+            <div className="flex items-center gap-2">
+              <RelaySelector
+                selectedRelay={selectedRelay}
+                onRelayChange={setSelectedRelay}
+              />
+              <LoginArea className="max-w-60" />
+            </div>
           </div>
         </div>
 
@@ -281,7 +292,14 @@ const Index = () => {
                 />
               </TabsContent>
               <TabsContent value="json" className="mt-4">
-                <JSONViewer data={remixData} />
+                <div className="space-y-4">
+                  <BroadcastButton
+                    remixData={remixData}
+                    selectedRelay={selectedRelay}
+                    disabled={timelineSegments.length === 0}
+                  />
+                  <JSONViewer data={remixData} />
+                </div>
               </TabsContent>
             </Tabs>
           </div>
