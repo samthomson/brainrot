@@ -33,6 +33,7 @@ const Index = () => {
   const [timelineSegments, setTimelineSegments] = usePersistedState<TimelineSegment[]>('video-remix-timeline', []);
   const [blocklist, setBlocklist] = usePersistedState<string[]>('video-remix-blocklist', []);
   const [selectedRelay, setSelectedRelay] = usePersistedState<string>('video-remix-relay', 'wss://relay.primal.net');
+  const [blossomUploadUrl] = usePersistedState<string>('video-remix-blossom-url', 'https://blossom.primal.net');
   const [isPickerOpen, setIsPickerOpen] = useState(false);
   const [isClearDialogOpen, setIsClearDialogOpen] = useState(false);
   const [isBlocklistOpen, setIsBlocklistOpen] = useState(false);
@@ -223,21 +224,19 @@ const Index = () => {
     totalDuration: timelineSegments.reduce((sum, seg) => sum + seg.duration, 0),
   };
 
-  // Slim remix data for DVM (without massive originalEvent)
+  // Slim remix data for DVM (matches simplified job spec)
   const remixDataSlim = {
     segments: timelineSegments.map((seg) => {
       const sourceVideo = sourceVideos.find(v => v.id === seg.sourceVideoId);
       return {
-        videoEventId: seg.videoEventId,
-        videoName: seg.videoName,
-        authorPubkey: sourceVideo?.pubkey || '',
+        videoUrl: sourceVideo?.url || '',
         startTime: seg.startTime,
         endTime: seg.endTime,
-        duration: seg.duration,
-        videoUrl: sourceVideo?.url || '',
+        eventId: seg.videoEventId,
+        authorPubkey: sourceVideo?.pubkey || '',
       };
     }),
-    totalDuration: timelineSegments.reduce((sum, seg) => sum + seg.duration, 0),
+    blossom_upload_url: blossomUploadUrl,
   };
 
   return (
