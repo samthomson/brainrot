@@ -10,6 +10,7 @@ import { ClearAllDialog } from '@/components/ClearAllDialog';
 import { BlocklistManager } from '@/components/BlocklistManager';
 import { DVMSettings } from '@/components/DVMSettings';
 import { usePersistedState } from '@/hooks/usePersistedState';
+import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Eye, FileJson, Film, Settings } from 'lucide-react';
 import { useToast } from '@/hooks/useToast';
