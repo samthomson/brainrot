@@ -3,6 +3,7 @@ import { useSeoMeta } from '@unhead/react';
 import { SourceVideosList } from '@/components/SourceVideosList';
 import { TimelineTrack } from '@/components/TimelineTrack';
 import { JSONViewer } from '@/components/JSONViewer';
+import { DVMPayloadViewer } from '@/components/DVMPayloadViewer';
 import { RemixPreview } from '@/components/RemixPreview';
 import { VideoPickerModal } from '@/components/VideoPickerModal';
 import { ClearAllDialog } from '@/components/ClearAllDialog';
@@ -315,7 +316,14 @@ const Index = () => {
                     selectedRelay={selectedRelay}
                     disabled={timelineSegments.length === 0}
                   />
-                  <JSONViewer data={remixDataFull} />
+                  <DVMPayloadViewer 
+                    data={remixDataSlim} 
+                    title="DVM Payload (What Gets Sent)"
+                  />
+                  <DVMPayloadViewer 
+                    data={remixDataFull} 
+                    title="Full Data (Reference Only)"
+                  />
                 </div>
               </TabsContent>
             </Tabs>
