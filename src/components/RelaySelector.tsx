@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Popover,
   PopoverContent,
@@ -7,8 +7,9 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Radio, Check } from 'lucide-react';
+import { Radio, Check, ChevronDown } from 'lucide-react';
 import { useToast } from '@/hooks/useToast';
+import { usePersistedState } from '@/hooks/usePersistedState';
 
 interface RelaySelectorProps {
   selectedRelay: string;
@@ -26,6 +27,9 @@ export function RelaySelector({ selectedRelay, onRelayChange }: RelaySelectorPro
   const [customRelay, setCustomRelay] = useState('');
   const [open, setOpen] = useState(false);
   const { toast } = useToast();
+  const [customRelays, setCustomRelays] = usePersistedState<string[]>('custom-relays', []);
+  
+  const allRelays = [...DEFAULT_RELAYS, ...customRelays];
 
   const handleCustomRelay = () => {
     const relay = customRelay.trim();
@@ -38,11 +42,16 @@ export function RelaySelector({ selectedRelay, onRelayChange }: RelaySelectorPro
       return;
     }
 
+    // Add to custom relays list if not already there
+    if (!allRelays.includes(relay)) {
+      setCustomRelays((prev) => [...prev, relay]);
+    }
+
     onRelayChange(relay);
     setCustomRelay('');
     setOpen(false);
     toast({
-      title: 'Relay Selected',
+      title: 'Relay Added & Selected',
       description: relay,
     });
   };
@@ -55,6 +64,7 @@ export function RelaySelector({ selectedRelay, onRelayChange }: RelaySelectorPro
         <Button variant="outline" size="sm" className="gap-2">
           <Radio className="h-4 w-4" />
           <span className="hidden sm:inline">{displayRelay}</span>
+          <ChevronDown className="h-3 w-3 opacity-50" />
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-80" align="end">
@@ -66,9 +76,9 @@ export function RelaySelector({ selectedRelay, onRelayChange }: RelaySelectorPro
             </p>
           </div>
 
-          {/* Preset relays */}
+          {/* All relays (preset + custom) */}
           <div className="space-y-2">
-            {DEFAULT_RELAYS.map((relay) => (
+            {allRelays.map((relay) => (
               <Button
                 key={relay}
                 variant={selectedRelay === relay ? 'default' : 'outline'}
@@ -80,7 +90,7 @@ export function RelaySelector({ selectedRelay, onRelayChange }: RelaySelectorPro
                 }}
               >
                 {selectedRelay === relay && <Check className="h-4 w-4 mr-2" />}
-                {relay.replace('wss://', '')}
+                {relay.replace('wss://', '').replace('ws://', '')}
               </Button>
             ))}
           </div>
