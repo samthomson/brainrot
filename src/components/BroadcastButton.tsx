@@ -51,8 +51,9 @@ export function BroadcastButton({ remixData, selectedRelay, disabled }: Broadcas
       console.log('Signing event...');
       
       // Sign the event first
+      // Using kind 5342 for video remix DVM job requests
       const unsignedEvent = {
-        kind: 5900,
+        kind: 5342,
         content: JSON.stringify(remixData), // Full data goes in content
         tags: [
           ['output', 'video/mp4'],
