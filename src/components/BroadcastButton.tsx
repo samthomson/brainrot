@@ -52,7 +52,13 @@ export function BroadcastButton({ remixData, selectedRelay, disabled }: Broadcas
       console.log('Relay created:', relay);
 
       console.log('Publishing event...');
-      const event = await relay.event({
+      
+      // Add timeout to prevent hanging
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Broadcast timeout after 10 seconds')), 10000);
+      });
+
+      const publishPromise = relay.event({
         kind: 5900,
         content: JSON.stringify(remixData),
         tags: [
@@ -64,6 +70,8 @@ export function BroadcastButton({ remixData, selectedRelay, disabled }: Broadcas
         ],
       });
 
+      const event = await Promise.race([publishPromise, timeoutPromise]);
+
       console.log('=== DVM Job Request Published Successfully ===');
       console.log('Event:', event);
       console.log('Event ID:', event.id);
@@ -72,18 +80,17 @@ export function BroadcastButton({ remixData, selectedRelay, disabled }: Broadcas
 
       toast({
         title: 'Broadcasted Successfully! ✅',
-        description: `Job request sent to ${selectedRelay.replace('wss://', '')}. Check console for event ID.`,
+        description: `Job request sent to ${selectedRelay.replace('wss://', '')}. Event ID: ${event.id.slice(0, 8)}...`,
       });
     } catch (error) {
       console.error('=== Broadcast Error ===');
       console.error('Error:', error);
       console.error('Error type:', typeof error);
-      console.error('Error object:', JSON.stringify(error, null, 2));
       
       const errorMessage = error instanceof Error ? error.message : String(error);
       toast({
         title: 'Broadcast Failed',
-        description: errorMessage || 'Unknown error occurred',
+        description: errorMessage || 'Unknown error occurred. Check console for details.',
         variant: 'destructive',
       });
     } finally {
