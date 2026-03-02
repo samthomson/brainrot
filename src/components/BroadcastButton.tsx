@@ -52,16 +52,18 @@ export function BroadcastButton({ remixData, selectedRelay, disabled }: Broadcas
       
       // Sign the event first
       // Using kind 5342 for video remix DVM job requests
+      const totalDuration = remixData.segments.reduce((sum, seg) => sum + (seg.endTime - seg.startTime), 0);
+      
       const unsignedEvent = {
         kind: 5342,
-        content: JSON.stringify(remixData), // Full data goes in content
+        content: JSON.stringify(remixData),
         tags: [
           ['output', 'video/mp4'],
           ['relays', selectedRelay],
           ['param', 'segments', remixData.segments.length.toString()],
-          ['param', 'duration', remixData.totalDuration.toFixed(2)],
+          ['param', 'duration', totalDuration.toFixed(2)],
           ['t', 'video-remix'],
-          ['alt', `Video remix job: combine ${remixData.segments.length} segments into one video (${remixData.totalDuration.toFixed(2)}s total)`],
+          ['alt', `Video remix job: combine ${remixData.segments.length} segments into one video (${totalDuration.toFixed(2)}s total)`],
         ],
         created_at: Math.floor(Date.now() / 1000),
       };
