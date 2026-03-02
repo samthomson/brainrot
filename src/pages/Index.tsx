@@ -206,7 +206,8 @@ const Index = () => {
     });
   };
 
-  const remixData: RemixData = {
+  // Full remix data for JSON viewer (includes everything)
+  const remixDataFull: RemixData = {
     segments: timelineSegments.map((seg) => {
       const sourceVideo = sourceVideos.find(v => v.id === seg.sourceVideoId);
       return {
@@ -217,6 +218,23 @@ const Index = () => {
         endTime: seg.endTime,
         duration: seg.duration,
         originalEvent: sourceVideo?.event || {} as any,
+      };
+    }),
+    totalDuration: timelineSegments.reduce((sum, seg) => sum + seg.duration, 0),
+  };
+
+  // Slim remix data for DVM (without massive originalEvent)
+  const remixDataSlim = {
+    segments: timelineSegments.map((seg) => {
+      const sourceVideo = sourceVideos.find(v => v.id === seg.sourceVideoId);
+      return {
+        videoEventId: seg.videoEventId,
+        videoName: seg.videoName,
+        authorPubkey: sourceVideo?.pubkey || '',
+        startTime: seg.startTime,
+        endTime: seg.endTime,
+        duration: seg.duration,
+        videoUrl: sourceVideo?.url || '',
       };
     }),
     totalDuration: timelineSegments.reduce((sum, seg) => sum + seg.duration, 0),
@@ -294,11 +312,11 @@ const Index = () => {
               <TabsContent value="json" className="mt-4">
                 <div className="space-y-4">
                   <BroadcastButton
-                    remixData={remixData}
+                    remixData={remixDataSlim}
                     selectedRelay={selectedRelay}
                     disabled={timelineSegments.length === 0}
                   />
-                  <JSONViewer data={remixData} />
+                  <JSONViewer data={remixDataFull} />
                 </div>
               </TabsContent>
             </Tabs>
