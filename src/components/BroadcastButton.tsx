@@ -5,6 +5,7 @@ import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useNostr } from '@nostrify/react';
 import { useToast } from '@/hooks/useToast';
 import type { RemixData } from '@/types/video';
+import type { NostrEvent } from '@nostrify/nostrify';
 
 interface BroadcastButtonProps {
   remixData: RemixData;
@@ -47,18 +48,10 @@ export function BroadcastButton({ remixData, selectedRelay, disabled }: Broadcas
     setIsBroadcasting(true);
 
     try {
-      console.log('Creating relay connection...');
-      const relay = nostr.relay(selectedRelay);
-      console.log('Relay created:', relay);
-
-      console.log('Publishing event...');
+      console.log('Signing event...');
       
-      // Add timeout to prevent hanging
-      const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Broadcast timeout after 10 seconds')), 10000);
-      });
-
-      const publishPromise = relay.event({
+      // Sign the event first
+      const unsignedEvent = {
         kind: 5900,
         content: JSON.stringify(remixData),
         tags: [
@@ -68,19 +61,34 @@ export function BroadcastButton({ remixData, selectedRelay, disabled }: Broadcas
           ['t', 'video-remix'],
           ['alt', 'Video remix job request: combine multiple video segments into one output video'],
         ],
-      });
+        created_at: Math.floor(Date.now() / 1000),
+      };
 
-      const event = await Promise.race([publishPromise, timeoutPromise]);
+      const signedEvent = await user.signer.signEvent(unsignedEvent);
+      console.log('Event signed:', signedEvent);
+
+      console.log('Creating relay connection to:', selectedRelay);
+      const relay = nostr.relay(selectedRelay);
+      console.log('Relay created');
+
+      console.log('Publishing event to relay...');
+      
+      // Publish with timeout
+      await Promise.race([
+        relay.event(signedEvent),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Relay timeout after 10 seconds')), 10000)
+        ),
+      ]);
 
       console.log('=== DVM Job Request Published Successfully ===');
-      console.log('Event:', event);
-      console.log('Event ID:', event.id);
+      console.log('Event ID:', signedEvent.id);
       console.log('Relay:', selectedRelay);
-      console.log('Data:', remixData);
+      console.log('Event:', signedEvent);
 
       toast({
         title: 'Broadcasted Successfully! ✅',
-        description: `Job request sent to ${selectedRelay.replace('wss://', '')}. Event ID: ${event.id.slice(0, 8)}...`,
+        description: `Job request sent to ${selectedRelay.replace('wss://', '')}. Event ID: ${signedEvent.id.slice(0, 8)}...`,
       });
     } catch (error) {
       console.error('=== Broadcast Error ===');
