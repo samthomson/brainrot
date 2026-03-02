@@ -15,6 +15,8 @@ import { useToast } from '@/hooks/useToast';
 import { LoginArea } from '@/components/auth/LoginArea';
 import { RelaySelector } from '@/components/RelaySelector';
 import { BroadcastButton } from '@/components/BroadcastButton';
+import { DVMJobStatus } from '@/components/DVMJobStatus';
+import { useDVMJob } from '@/hooks/useDVMJob';
 import type { Video, SourceVideo, TimelineSegment, RemixData } from '@/types/video';
 
 const Index = () => {
@@ -35,9 +37,12 @@ const Index = () => {
   const [blocklist, setBlocklist] = usePersistedState<string[]>('video-remix-blocklist', []);
   const [selectedRelay, setSelectedRelay] = usePersistedState<string>('video-remix-relay', 'wss://relay.primal.net');
   const [blossomUploadUrl] = usePersistedState<string>('video-remix-blossom-url', 'https://blossom.primal.net');
+  const [dvmPubkey] = usePersistedState<string>('video-remix-dvm-pubkey', '');
   const [isPickerOpen, setIsPickerOpen] = useState(false);
   const [isClearDialogOpen, setIsClearDialogOpen] = useState(false);
   const [isBlocklistOpen, setIsBlocklistOpen] = useState(false);
+
+  const { jobState, broadcastJob, resetJob } = useDVMJob(dvmPubkey, selectedRelay);
 
   // Derive sourceVideos for preview component
   const sourceVideos = sourceSegments.map(s => s.video);
@@ -313,9 +318,19 @@ const Index = () => {
                 <div className="space-y-4">
                   <BroadcastButton
                     remixData={remixDataSlim}
-                    selectedRelay={selectedRelay}
+                    onBroadcast={() => broadcastJob(remixDataSlim)}
                     disabled={timelineSegments.length === 0}
+                    isLoading={jobState.status === 'broadcasting'}
                   />
+                  
+                  <DVMJobStatus
+                    status={jobState.status}
+                    currentTask={jobState.currentTask}
+                    resultEventId={jobState.resultEventId}
+                    errorMessage={jobState.errorMessage}
+                    onReset={resetJob}
+                  />
+                  
                   <DVMPayloadViewer 
                     data={remixDataSlim} 
                     title="DVM Payload (What Gets Sent)"
